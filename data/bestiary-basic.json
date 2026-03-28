@@ -1,0 +1,357 @@
+{
+  "monster": [
+    {
+      "name": "Goblin",
+      "source": "MM",
+      "page": 166,
+      "size": ["S"],
+      "type": "humanoid",
+      "subtype": "goblinoid",
+      "alignment": ["NE"],
+      "ac": [{"ac": 15, "from": ["leather armor", "shield"]}],
+      "hp": {"average": 7, "formula": "2d6"},
+      "speed": {"walk": 30},
+      "str": 8, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 8,
+      "skill": {"stealth": "+6"},
+      "senses": ["darkvision 60 ft."],
+      "passive": 9,
+      "languages": ["Common", "Goblin"],
+      "cr": "1/4",
+      "trait": [
+        {"name": "Nimble Escape", "entries": ["The goblin can take the Disengage or Hide action as a bonus action on each of its turns."]}
+      ],
+      "action": [
+        {"name": "Scimitar", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}{@damage 1d6+2} slashing damage."]},
+        {"name": "Shortbow", "entries": ["{@atk rw} {@hit 4} to hit, range 80/320 ft., one target. {@h}{@damage 1d6+2} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Kobold",
+      "source": "MM",
+      "page": 195,
+      "size": ["S"],
+      "type": "humanoid",
+      "subtype": "kobold",
+      "alignment": ["LE"],
+      "ac": [{"ac": 12}],
+      "hp": {"average": 5, "formula": "2d6-2"},
+      "speed": {"walk": 30},
+      "str": 7, "dex": 15, "con": 9, "int": 8, "wis": 7, "cha": 8,
+      "senses": ["darkvision 60 ft."],
+      "passive": 8,
+      "languages": ["Common", "Draconic"],
+      "cr": "1/8",
+      "trait": [
+        {"name": "Sunlight Sensitivity", "entries": ["While in sunlight, the kobold has disadvantage on attack rolls, as well as on Wisdom ({@skill Perception}) checks that rely on sight."]},
+        {"name": "Pack Tactics", "entries": ["The kobold has advantage on attack rolls against a creature if at least one of the kobold's allies is adjacent to the creature and the ally isn't {@condition incapacitated}."]}
+      ],
+      "action": [
+        {"name": "Dagger", "entries": ["{@atk mw,rw} {@hit 4} to hit, reach 5 ft. or range 20/60 ft., one target. {@h}{@damage 1d4+2} piercing damage."]},
+        {"name": "Sling", "entries": ["{@atk rw} {@hit 4} to hit, range 30/120 ft., one target. {@h}{@damage 1d4+2} bludgeoning damage."]}
+      ]
+    },
+    {
+      "name": "Orc",
+      "source": "MM",
+      "page": 246,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "orc",
+      "alignment": ["CE"],
+      "ac": [{"ac": 13, "from": ["hide armor"]}],
+      "hp": {"average": 15, "formula": "2d8+6"},
+      "speed": {"walk": 30},
+      "str": 16, "dex": 12, "con": 16, "int": 7, "wis": 11, "cha": 10,
+      "skill": {"intimidation": "+2"},
+      "senses": ["darkvision 60 ft."],
+      "passive": 10,
+      "languages": ["Common", "Orc"],
+      "cr": "1/2",
+      "trait": [
+        {"name": "Aggressive", "entries": ["As a bonus action, the orc can move up to its speed toward a hostile creature that it can see."]}
+      ],
+      "action": [
+        {"name": "Greataxe", "entries": ["{@atk mw} {@hit 5} to hit, reach 5 ft., one target. {@h}{@damage 1d12+3} slashing damage."]},
+        {"name": "Javelin", "entries": ["{@atk mw,rw} {@hit 5} to hit, reach 5 ft. or range 30/120 ft., one target. {@h}{@damage 1d6+3} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Skeleton",
+      "source": "MM",
+      "page": 272,
+      "size": ["M"],
+      "type": "undead",
+      "alignment": ["LE"],
+      "ac": [{"ac": 13, "from": ["armor scraps"]}],
+      "hp": {"average": 13, "formula": "2d8+4"},
+      "speed": {"walk": 30},
+      "str": 10, "dex": 14, "con": 15, "int": 6, "wis": 8, "cha": 5,
+      "vulnerable": ["bludgeoning"],
+      "immune": ["poison"],
+      "conditionImmune": ["exhaustion", "poisoned"],
+      "senses": ["darkvision 60 ft."],
+      "passive": 9,
+      "languages": ["understands all languages it knew in life but can't speak"],
+      "cr": "1/4",
+      "action": [
+        {"name": "Shortsword", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}{@damage 1d6+2} piercing damage."]},
+        {"name": "Shortbow", "entries": ["{@atk rw} {@hit 4} to hit, range 80/320 ft., one target. {@h}{@damage 1d6+2} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Zombie",
+      "source": "MM",
+      "page": 316,
+      "size": ["M"],
+      "type": "undead",
+      "alignment": ["NE"],
+      "ac": [{"ac": 8}],
+      "hp": {"average": 22, "formula": "3d8+9"},
+      "speed": {"walk": 20},
+      "str": 13, "dex": 6, "con": 16, "int": 3, "wis": 6, "cha": 5,
+      "save": {"wis": "+0"},
+      "immune": ["poison"],
+      "conditionImmune": ["poisoned"],
+      "senses": ["darkvision 60 ft."],
+      "passive": 8,
+      "languages": ["understands the languages it knew in life but can't speak"],
+      "cr": "1/4",
+      "trait": [
+        {"name": "Undead Fortitude", "entries": ["If damage reduces the zombie to 0 hit points, it must make a Constitution saving throw with a DC of 5 + the damage taken, unless the damage is radiant or from a critical hit. On a success, the zombie drops to 1 hit point instead."]}
+      ],
+      "action": [
+        {"name": "Slam", "entries": ["{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}{@damage 1d6+1} bludgeoning damage."]}
+      ]
+    },
+    {
+      "name": "Wolf",
+      "source": "MM",
+      "page": 341,
+      "size": ["M"],
+      "type": "beast",
+      "alignment": ["unaligned"],
+      "ac": [{"ac": 13, "from": ["natural armor"]}],
+      "hp": {"average": 11, "formula": "2d8+2"},
+      "speed": {"walk": 40},
+      "str": 12, "dex": 15, "con": 12, "int": 3, "wis": 12, "cha": 6,
+      "skill": {"perception": "+3", "stealth": "+4"},
+      "passive": 13,
+      "cr": "1/4",
+      "trait": [
+        {"name": "Keen Hearing and Smell", "entries": ["The wolf has advantage on Wisdom ({@skill Perception}) checks that rely on hearing or smell."]},
+        {"name": "Pack Tactics", "entries": ["The wolf has advantage on attack rolls against a creature if at least one of the wolf's allies is adjacent to the creature and the ally isn't {@condition incapacitated}."]}
+      ],
+      "action": [
+        {"name": "Bite", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}{@damage 2d4+2} piercing damage. If the target is a creature, it must succeed on a {@dc 11} Strength saving throw or be knocked {@condition prone}."]}
+      ]
+    },
+    {
+      "name": "Bandit",
+      "source": "MM",
+      "page": 343,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "any race",
+      "alignment": ["CN"],
+      "ac": [{"ac": 12, "from": ["leather armor"]}],
+      "hp": {"average": 11, "formula": "2d8+2"},
+      "speed": {"walk": 30},
+      "str": 11, "dex": 12, "con": 12, "int": 10, "wis": 10, "cha": 10,
+      "passive": 10,
+      "languages": ["any one language (usually Common)"],
+      "cr": "1/8",
+      "action": [
+        {"name": "Scimitar", "entries": ["{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}{@damage 1d6+1} slashing damage."]},
+        {"name": "Light Crossbow", "entries": ["{@atk rw} {@hit 3} to hit, range 80/320 ft., one target. {@h}{@damage 1d8+1} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Giant Rat",
+      "source": "MM",
+      "page": 327,
+      "size": ["S"],
+      "type": "beast",
+      "alignment": ["unaligned"],
+      "ac": [{"ac": 12}],
+      "hp": {"average": 7, "formula": "2d6"},
+      "speed": {"walk": 30, "swim": 30},
+      "str": 7, "dex": 15, "con": 11, "int": 2, "wis": 10, "cha": 4,
+      "passive": 10,
+      "cr": "1/8",
+      "trait": [
+        {"name": "Keen Smell", "entries": ["The rat has advantage on Wisdom ({@skill Perception}) checks that rely on smell."]},
+        {"name": "Pack Tactics", "entries": ["The rat has advantage on an attack roll against a creature if at least one of the rat's allies is adjacent to the creature and the ally isn't {@condition incapacitated}."]}
+      ],
+      "action": [
+        {"name": "Bite", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}{@damage 1d4+2} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Bugbear",
+      "source": "MM",
+      "page": 33,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "goblinoid",
+      "alignment": ["CE"],
+      "ac": [{"ac": 16, "from": ["hide armor", "shield"]}],
+      "hp": {"average": 27, "formula": "5d8+5"},
+      "speed": {"walk": 30},
+      "str": 15, "dex": 14, "con": 13, "int": 8, "wis": 11, "cha": 9,
+      "skill": {"stealth": "+6", "survival": "+2"},
+      "senses": ["darkvision 60 ft."],
+      "passive": 10,
+      "languages": ["Common", "Goblin"],
+      "cr": "1",
+      "trait": [
+        {"name": "Brute", "entries": ["A melee weapon deals one extra die of its damage when the bugbear hits with it (included in the attack)."]},
+        {"name": "Surprise Attack", "entries": ["If the bugbear surprises a creature and hits it with an attack during the first round of combat, the target takes an extra {@damage 2d6} damage from the attack."]}
+      ],
+      "action": [
+        {"name": "Morningstar", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}{@damage 2d8+2} piercing damage."]},
+        {"name": "Javelin", "entries": ["{@atk mw,rw} {@hit 4} to hit, reach 5 ft. or range 30/120 ft., one target. {@h}{@damage 2d6+2} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Hobgoblin",
+      "source": "MM",
+      "page": 186,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "goblinoid",
+      "alignment": ["LE"],
+      "ac": [{"ac": 18, "from": ["chain mail", "shield"]}],
+      "hp": {"average": 11, "formula": "2d8+2"},
+      "speed": {"walk": 30},
+      "str": 13, "dex": 12, "con": 12, "int": 10, "wis": 10, "cha": 9,
+      "senses": ["darkvision 60 ft."],
+      "passive": 10,
+      "languages": ["Common", "Goblin"],
+      "cr": "1/2",
+      "trait": [
+        {"name": "Martial Advantage", "entries": ["Once per turn, the hobgoblin can deal an extra {@damage 2d6} damage to a creature it hits with a weapon attack if that creature is within 5 feet of an ally of the hobgoblin that isn't {@condition incapacitated}."]}
+      ],
+      "action": [
+        {"name": "Longsword", "entries": ["{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}{@damage 1d8+1} slashing damage, or {@damage 1d10+1} slashing damage if used with two hands."]},
+        {"name": "Longbow", "entries": ["{@atk rw} {@hit 3} to hit, range 150/600 ft., one target. {@h}{@damage 1d8+1} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Ogre",
+      "source": "MM",
+      "page": 237,
+      "size": ["L"],
+      "type": "giant",
+      "alignment": ["CE"],
+      "ac": [{"ac": 11, "from": ["hide armor"]}],
+      "hp": {"average": 59, "formula": "7d10+21"},
+      "speed": {"walk": 40},
+      "str": 19, "dex": 8, "con": 16, "int": 5, "wis": 7, "cha": 7,
+      "senses": ["darkvision 60 ft."],
+      "passive": 8,
+      "languages": ["Common", "Giant"],
+      "cr": "2",
+      "action": [
+        {"name": "Greatclub", "entries": ["{@atk mw} {@hit 6} to hit, reach 5 ft., one target. {@h}{@damage 2d8+4} bludgeoning damage."]},
+        {"name": "Javelin", "entries": ["{@atk mw,rw} {@hit 6} to hit, reach 5 ft. or range 30/120 ft., one target. {@h}{@damage 2d6+4} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Troll",
+      "source": "MM",
+      "page": 291,
+      "size": ["L"],
+      "type": "giant",
+      "alignment": ["CE"],
+      "ac": [{"ac": 15, "from": ["natural armor"]}],
+      "hp": {"average": 84, "formula": "8d10+40"},
+      "speed": {"walk": 30},
+      "str": 18, "dex": 13, "con": 20, "int": 7, "wis": 9, "cha": 7,
+      "skill": {"perception": "+2"},
+      "senses": ["darkvision 60 ft."],
+      "passive": 12,
+      "languages": ["Giant"],
+      "cr": "5",
+      "trait": [
+        {"name": "Keen Smell", "entries": ["The troll has advantage on Wisdom ({@skill Perception}) checks that rely on smell."]},
+        {"name": "Regeneration", "entries": ["The troll regains 10 hit points at the start of its turn. If the troll takes acid or fire damage, this trait doesn't function at the start of the troll's next turn. The troll dies only if it starts its turn with 0 hit points and doesn't regenerate."]}
+      ],
+      "action": [
+        {"name": "Multiattack", "entries": ["The troll makes three attacks: one with its bite and two with its claws."]},
+        {"name": "Bite", "entries": ["{@atk mw} {@hit 7} to hit, reach 5 ft., one target. {@h}{@damage 1d6+4} piercing damage."]},
+        {"name": "Claw", "entries": ["{@atk mw} {@hit 7} to hit, reach 5 ft., one target. {@h}{@damage 2d6+4} slashing damage."]}
+      ]
+    },
+    {
+      "name": "Owlbear",
+      "source": "MM",
+      "page": 249,
+      "size": ["L"],
+      "type": "monstrosity",
+      "alignment": ["unaligned"],
+      "ac": [{"ac": 13, "from": ["natural armor"]}],
+      "hp": {"average": 59, "formula": "7d10+21"},
+      "speed": {"walk": 40},
+      "str": 20, "dex": 12, "con": 17, "int": 3, "wis": 12, "cha": 7,
+      "skill": {"perception": "+3"},
+      "passive": 13,
+      "cr": "3",
+      "trait": [
+        {"name": "Keen Sight and Smell", "entries": ["The owlbear has advantage on Wisdom ({@skill Perception}) checks that rely on sight or smell."]}
+      ],
+      "action": [
+        {"name": "Multiattack", "entries": ["The owlbear makes two attacks: one with its beak and one with its claws."]},
+        {"name": "Beak", "entries": ["{@atk mw} {@hit 7} to hit, reach 5 ft., one creature. {@h}{@damage 1d10+5} piercing damage."]},
+        {"name": "Claws", "entries": ["{@atk mw} {@hit 7} to hit, reach 5 ft., one target. {@h}{@damage 2d8+5} slashing damage."]}
+      ]
+    },
+    {
+      "name": "Gnoll",
+      "source": "MM",
+      "page": 163,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "gnoll",
+      "alignment": ["CE"],
+      "ac": [{"ac": 15, "from": ["hide armor", "shield"]}],
+      "hp": {"average": 22, "formula": "5d8"},
+      "speed": {"walk": 30},
+      "str": 14, "dex": 12, "con": 11, "int": 6, "wis": 10, "cha": 7,
+      "senses": ["darkvision 60 ft."],
+      "passive": 10,
+      "languages": ["Gnoll"],
+      "cr": "1/2",
+      "trait": [
+        {"name": "Rampage", "entries": ["When the gnoll reduces a creature to 0 hit points with a melee attack on its turn, the gnoll can take a bonus action to move up to half its speed and make a bite attack."]}
+      ],
+      "action": [
+        {"name": "Bite", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one creature. {@h}{@damage 1d4+2} piercing damage."]},
+        {"name": "Spear", "entries": ["{@atk mw,rw} {@hit 4} to hit, reach 5 ft. or range 20/60 ft., one target. {@h}{@damage 1d6+2} piercing damage, or {@damage 1d8+2} piercing damage if used with two hands to make a melee attack."]},
+        {"name": "Longbow", "entries": ["{@atk rw} {@hit 3} to hit, range 150/600 ft., one target. {@h}{@damage 1d8+1} piercing damage."]}
+      ]
+    },
+    {
+      "name": "Cultist",
+      "source": "MM",
+      "page": 345,
+      "size": ["M"],
+      "type": "humanoid",
+      "subtype": "any race",
+      "alignment": ["CN"],
+      "ac": [{"ac": 12, "from": ["leather armor"]}],
+      "hp": {"average": 9, "formula": "2d8"},
+      "speed": {"walk": 30},
+      "str": 11, "dex": 12, "con": 10, "int": 10, "wis": 11, "cha": 10,
+      "skill": {"deception": "+2", "religion": "+2"},
+      "passive": 10,
+      "languages": ["any one language (usually Common)"],
+      "cr": "1/8",
+      "trait": [
+        {"name": "Dark Devotion", "entries": ["The cultist has advantage on saving throws against being {@condition charmed} or {@condition frightened}."]}
+      ],
+      "action": [
+        {"name": "Scimitar", "entries": ["{@atk mw} {@hit 3} to hit, reach 5 ft., one creature. {@h}{@damage 1d6+1} slashing damage."]}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d1117">
+  <title>DnD Arena Pro ⚔️</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Header ────────────────────────────────────────── -->
+    <header id="app-header">
+      <div class="header-logo">🐉</div>
+      <h1 class="header-title">DnD Arena Pro</h1>
+      <div class="header-round" id="header-round">Round —</div>
+    </header>
+
+    <!-- ── Tab Navigation ────────────────────────────────── -->
+    <nav id="tab-nav">
+      <button class="tab-btn active" data-tab="arena">⚔️ Arena</button>
+      <button class="tab-btn" data-tab="monsters">🐉 Monsters</button>
+      <button class="tab-btn" data-tab="combat">🎲 Combat</button>
+      <button class="tab-btn" data-tab="characters">👤 Party</button>
+    </nav>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- Arena Tab                                          -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <section id="tab-arena" class="tab-content active">
+
+      <div id="arena-toolbar">
+        <button class="btn btn-primary btn-sm" id="btn-add-monster">🐉 Monster</button>
+        <button class="btn btn-secondary btn-sm" id="btn-add-player">🧙 Player</button>
+        <button class="btn btn-danger btn-sm" id="btn-clear-arena">🗑️ Clear</button>
+        <div class="turn-info" id="turn-info">No combat</div>
+      </div>
+
+      <div id="grid-container">
+        <div id="battle-grid"></div>
+      </div>
+
+      <!-- Token Info Panel (shown when token is selected) -->
+      <div id="token-info-panel" class="hidden">
+        <div class="token-info-header">
+          <div class="token-badge token-badge-monster" id="info-token-badge">GOB</div>
+          <div class="token-info-name-section">
+            <span class="token-info-name" id="info-name">Goblin</span>
+            <span class="token-info-type" id="info-type">👹 Monster</span>
+          </div>
+          <button class="btn btn-sm btn-danger" id="btn-remove-token" title="Remove token">✕</button>
+        </div>
+        <div class="token-info-stats">
+          <div class="stat-group">
+            <label>Hit Points</label>
+            <div class="hp-control">
+              <button class="btn btn-sm btn-danger" id="btn-hp-minus">−</button>
+              <span class="hp-display" id="info-hp">0/0</span>
+              <button class="btn btn-sm btn-primary" id="btn-hp-plus">+</button>
+            </div>
+            <div class="hp-bar-container">
+              <div class="hp-bar hp-full" id="info-hp-bar" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="stat-group">
+            <label>AC</label>
+            <span id="info-ac">—</span>
+          </div>
+          <div class="stat-group">
+            <label>Initiative</label>
+            <span id="info-initiative">—</span>
+          </div>
+          <div class="stat-group">
+            <label>Position</label>
+            <span id="info-position">—</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- Monsters Tab                                       -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <section id="tab-monsters" class="tab-content">
+
+      <div class="search-bar">
+        <input
+          type="search"
+          id="monster-search"
+          placeholder="🔍 Search monsters by name..."
+          class="search-input"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        >
+      </div>
+
+      <div class="filter-row">
+        <select id="cr-filter" class="select-input" title="Filter by Challenge Rating">
+          <option value="">All CRs</option>
+          <option value="0">CR 0</option>
+          <option value="0.125">CR 1/8</option>
+          <option value="0.25">CR 1/4</option>
+          <option value="0.5">CR 1/2</option>
+          <option value="1">CR 1</option>
+          <option value="2">CR 2</option>
+          <option value="3">CR 3</option>
+          <option value="4">CR 4</option>
+          <option value="5">CR 5</option>
+          <option value="6">CR 6</option>
+          <option value="7">CR 7</option>
+          <option value="8">CR 8</option>
+          <option value="9">CR 9</option>
+          <option value="10">CR 10</option>
+          <option value="11">CR 11+</option>
+        </select>
+        <select id="type-filter" class="select-input" title="Filter by creature type">
+          <option value="">All Types</option>
+          <option value="humanoid">Humanoid</option>
+          <option value="beast">Beast</option>
+          <option value="undead">Undead</option>
+          <option value="monstrosity">Monstrosity</option>
+          <option value="fiend">Fiend</option>
+          <option value="giant">Giant</option>
+          <option value="dragon">Dragon</option>
+          <option value="fey">Fey</option>
+          <option value="aberration">Aberration</option>
+          <option value="elemental">Elemental</option>
+          <option value="construct">Construct</option>
+          <option value="plant">Plant</option>
+          <option value="ooze">Ooze</option>
+        </select>
+      </div>
+
+      <div id="monster-results">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading monsters...</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- Combat Tab                                         -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <section id="tab-combat" class="tab-content">
+
+      <div class="combat-toolbar">
+        <button class="btn btn-primary btn-sm" id="btn-roll-initiative">🎲 Roll Initiative</button>
+        <button class="btn btn-secondary btn-sm" id="btn-next-turn">Next ▶</button>
+        <button class="btn btn-danger btn-sm" id="btn-reset-combat">🔄 Reset</button>
+        <div class="round-counter">
+          Round <span id="round-counter">0</span>
+        </div>
+      </div>
+
+      <div id="initiative-list">
+        <div class="empty-state">
+          <div class="empty-icon">🎲</div>
+          <p>No combat in progress.</p>
+          <p class="empty-hint">Add tokens to the arena, then click "Roll Initiative".</p>
+        </div>
+      </div>
+
+      <!-- ── Attack Panel ──────────────────────────────────── -->
+      <div id="attack-panel" class="attack-panel">
+        <h3 class="section-title attack-panel-title">⚔️ Roll Attack</h3>
+        <div class="attack-form">
+          <div class="form-row">
+            <select id="attack-attacker" class="select-input" title="Attacker">
+              <option value="">— Attacker —</option>
+            </select>
+            <select id="attack-action" class="select-input" title="Attack action">
+              <option value="">— Attack —</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <select id="attack-target" class="select-input" title="Target">
+              <option value="">— Target —</option>
+            </select>
+            <button class="btn btn-primary btn-sm" id="btn-roll-attack">🎲 Roll</button>
+          </div>
+        </div>
+        <div id="attack-result" class="attack-result hidden"></div>
+      </div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- Characters / Party Tab                             -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <section id="tab-characters" class="tab-content">
+
+      <div class="dicecloud-import">
+        <h3 class="section-title">🔗 Import from DiceCloud</h3>
+        <p class="section-desc">Import a player character from a DiceCloud v2 share link.</p>
+        <div class="import-form">
+          <input
+            type="url"
+            id="dicecloud-url"
+            placeholder="https://v2.dicecloud.com/character/..."
+            class="text-input"
+            autocomplete="off"
+          >
+          <button class="btn btn-primary" id="btn-import-character">Import</button>
+        </div>
+        <div id="import-status" class="import-status hidden"></div>
+
+        <div class="divider"></div>
+
+        <h3 class="section-title">➕ Add Custom Player</h3>
+        <div class="custom-player-form">
+          <input
+            type="text"
+            id="player-name"
+            placeholder="Character Name"
+            class="text-input"
+            autocomplete="off"
+          >
+          <div class="form-row">
+            <input type="number" id="player-hp" placeholder="Max HP" class="text-input" min="1" max="999">
+            <input type="number" id="player-ac" placeholder="AC" class="text-input" min="1" max="30">
+          </div>
+          <div class="form-row ability-scores">
+            <div class="ability-input">
+              <label>STR</label>
+              <input type="number" id="player-str" value="10" class="text-input" min="1" max="30">
+            </div>
+            <div class="ability-input">
+              <label>DEX</label>
+              <input type="number" id="player-dex" value="10" class="text-input" min="1" max="30">
+            </div>
+            <div class="ability-input">
+              <label>CON</label>
+              <input type="number" id="player-con" value="10" class="text-input" min="1" max="30">
+            </div>
+            <div class="ability-input">
+              <label>INT</label>
+              <input type="number" id="player-int" value="10" class="text-input" min="1" max="30">
+            </div>
+            <div class="ability-input">
+              <label>WIS</label>
+              <input type="number" id="player-wis" value="10" class="text-input" min="1" max="30">
+            </div>
+            <div class="ability-input">
+              <label>CHA</label>
+              <input type="number" id="player-cha" value="10" class="text-input" min="1" max="30">
+            </div>
+          </div>
+          <div class="form-row attack-fields">
+            <div class="attack-field-group">
+              <label>To Hit</label>
+              <input
+                type="text"
+                id="player-tohit"
+                placeholder="+5 or 1d4+3"
+                class="text-input"
+                autocomplete="off"
+                title="Attack bonus (e.g. +5, -1, 1d4+2)"
+              >
+            </div>
+            <div class="attack-field-group">
+              <label>Damage</label>
+              <input
+                type="text"
+                id="player-damage"
+                placeholder="1d8+3"
+                class="text-input"
+                autocomplete="off"
+                title="Damage roll (e.g. 1d8+3, 2d6, 5)"
+              >
+            </div>
+          </div>
+          <button class="btn btn-secondary" id="btn-add-custom-player">⚔️ Add to Arena</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <h3 class="section-title" style="padding: 0 4px 8px;">👥 Party Members</h3>
+      <div id="character-list">
+        <div class="empty-state">
+          <div class="empty-icon">👤</div>
+          <p>No party members yet.</p>
+          <p class="empty-hint">Import from DiceCloud or add a custom player above.</p>
+        </div>
+      </div>
+
+    </section>
+  </div><!-- /#app -->
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- Statblock Overlay                                      -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="statblock-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content statblock-sheet">
+      <div class="overlay-header">
+        <h2 id="statblock-name">Monster</h2>
+        <button class="btn-close" id="statblock-close" aria-label="Close statblock">✕</button>
+      </div>
+      <div id="statblock-body"></div>
+      <div class="overlay-actions">
+        <button class="btn btn-primary" id="btn-add-to-arena">⚔️ Add to Arena</button>
+        <button class="btn btn-secondary" id="btn-close-statblock">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- Add to Arena Modal                                     -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="add-to-arena-modal" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content modal-sheet">
+      <div class="overlay-header">
+        <h2>⚔️ Add to Arena</h2>
+        <button class="btn-close" id="modal-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-monster-name" class="modal-subtitle">Monster Name</p>
+        <div class="form-group">
+          <label>How many to add?</label>
+          <input
+            type="number"
+            id="modal-count"
+            value="1"
+            min="1"
+            max="20"
+            class="text-input"
+          >
+        </div>
+        <div class="form-group">
+          <label>Override HP (leave blank for average):</label>
+          <input
+            type="number"
+            id="modal-hp"
+            placeholder="Use average HP"
+            class="text-input"
+            min="1"
+          >
+        </div>
+      </div>
+      <div class="overlay-actions">
+        <button class="btn btn-primary" id="btn-confirm-add">✅ Place on Grid</button>
+        <button class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
