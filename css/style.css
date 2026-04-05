@@ -447,11 +447,23 @@ body::before {
 /* ── Token Info Panel ────────────────────────────────────── */
 #token-info-panel {
   min-height: var(--info-panel-h);
+  max-height: 45vh;
   background: var(--bg-panel);
   border-top: 1px solid var(--border-bright);
   padding: 10px 14px;
   flex-shrink: 0;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#token-info-panel::-webkit-scrollbar {
+  width: 4px;
+}
+#token-info-panel::-webkit-scrollbar-track { background: var(--bg-panel); }
+#token-info-panel::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 2px;
 }
 
 #token-info-panel.hidden { display: none; }
