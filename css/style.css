@@ -1522,6 +1522,15 @@ body::before {
   border-radius: var(--radius-sm);
 }
 
+@keyframes resultFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.result-fading {
+  animation: resultFadeOut 0.5s ease forwards;
+}
+
 /* Modal sheet */
 .modal-sheet .modal-body {
   padding: 16px 20px;

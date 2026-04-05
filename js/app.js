@@ -190,6 +190,27 @@ function setupTokenInfoPanel() {
     });
   });
 
+  // Schedule a result element to fade out after 2 seconds and then clear its content
+  function scheduleResultFade(el) {
+    clearTimeout(el._fadeTimer);
+    el.classList.remove('result-fading');
+    el._fadeTimer = setTimeout(() => {
+      el.classList.add('result-fading');
+      setTimeout(() => {
+        el.replaceChildren();
+        el.classList.remove('result-fading');
+      }, 500);
+    }, 2000);
+  }
+
+  // Double the number of dice in a notation string (e.g. "1d6+4" → "2d6+4")
+  function doubleDiceNotation(notation) {
+    const str = String(notation).trim().toLowerCase().replace(/\s/g, '');
+    const match = str.match(/^(\d+)d(\d+)([+-]\d+)?$/);
+    if (!match) return notation;
+    return `${parseInt(match[1]) * 2}d${match[2]}${match[3] || ''}`;
+  }
+
   // Attack roll and damage roll buttons (event delegation on the dynamic attack list)
   const attackListEl = document.getElementById('token-attack-list');
   if (attackListEl) {
@@ -199,6 +220,8 @@ function setupTokenInfoPanel() {
         const attackRow = atkBtn.closest('.sb-attack-row');
         const bonus = parseInt(atkBtn.dataset.bonus, 10);
         const d20 = Math.floor(Math.random() * 20) + 1;
+        const isCrit = d20 === 20;
+        if (attackRow) attackRow.dataset.critical = isCrit ? 'true' : '';
         const total = d20 + bonus;
         const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Attack';
@@ -208,7 +231,15 @@ function setupTokenInfoPanel() {
           boldName.textContent = name;
           const boldTotal = document.createElement('strong');
           boldTotal.textContent = String(total);
-          resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal);
+          if (isCrit) {
+            const critSpan = document.createElement('span');
+            critSpan.textContent = ' CRITICAL HIT!';
+            critSpan.style.color = 'var(--gold-accent, gold)';
+            resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal, critSpan);
+          } else {
+            resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal);
+          }
+          scheduleResultFade(resultEl);
         }
         return;
       }
@@ -216,13 +247,16 @@ function setupTokenInfoPanel() {
       const dmgBtn = e.target.closest('.sb-dmg-roll-btn');
       if (dmgBtn) {
         const attackRow = dmgBtn.closest('.sb-attack-row');
+        const isCrit = attackRow?.dataset.critical === 'true';
+        if (attackRow) attackRow.dataset.critical = '';
         const damageParts = dmgBtn.dataset.damage.split('|');
         let totalDmg = 0;
         const rolls = [];
         damageParts.forEach(dice => {
-          const result = rollDice(dice);
+          const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
+          const result = rollDice(effectiveDice);
           totalDmg += result;
-          rolls.push(`${dice}(${result})`);
+          rolls.push(`${effectiveDice}(${result})`);
         });
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
         const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
@@ -231,7 +265,15 @@ function setupTokenInfoPanel() {
           boldName.textContent = name;
           const boldTotal = document.createElement('strong');
           boldTotal.textContent = String(totalDmg);
-          resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+          if (isCrit) {
+            const critSpan = document.createElement('span');
+            critSpan.textContent = ' (Critical!)';
+            critSpan.style.color = 'var(--gold-accent, gold)';
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+          } else {
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+          }
+          scheduleResultFade(resultEl);
         }
       }
     });
