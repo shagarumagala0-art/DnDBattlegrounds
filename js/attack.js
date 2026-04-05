@@ -3,7 +3,7 @@
  */
 
 import { state, changeTokenHp } from './state.js';
-import { rollDice, showToast } from './utils.js';
+import { rollDice, showToast, getModifier } from './utils.js';
 import { renderInitiativeList } from './combat.js';
 
 // Callback for when HP changes so arena can re-render
@@ -12,11 +12,26 @@ export function onAttackHit(fn) {
   onAttackHitCb = fn;
 }
 
+/** Maps full ability names (lowercase) to their 3-letter token property keys. */
+const ABILITY_NAME_MAP = {
+  strength: 'str', dexterity: 'dex', constitution: 'con',
+  intelligence: 'int', wisdom: 'wis', charisma: 'cha',
+};
+
+/** Maps 3-letter ability keys to their display labels. */
+const ABILITY_LABEL_MAP = {
+  str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA',
+};
+
 /**
  * Parse attack actions from a monster's action entries.
- * Extracts to-hit bonus and damage from {@hit X} / {@damage XdY+Z} tags.
+ * Returns both standard to-hit attacks ({@hit}) and saving throw actions ({@dc}).
+ *
+ * Standard attack: {name, isSaveAttack: false, toHit, damage}
+ * Save attack:     {name, isSaveAttack: true, dc, saveAbility, damage, halfOnSave}
+ *
  * @param {Object} monster
- * @returns {Array<{name, toHit, damage}>}
+ * @returns {Array<Object>}
  */
 export function parseMonsterAttacks(monster) {
   if (!monster || !monster.action) return [];
@@ -29,17 +44,110 @@ export function parseMonsterAttacks(monster) {
 
     const hitMatch = entryText.match(/\{@hit\s+(-?\d+)\}/);
     const dmgMatch = entryText.match(/\{@damage\s+([^}]+)\}/);
+    const dcMatch = entryText.match(/\{@dc\s+(\d+)\}/);
+    const saveMatch = entryText.match(
+      /(strength|dexterity|constitution|intelligence|wisdom|charisma)\s+saving\s+throw/i
+    );
 
-    if (hitMatch || dmgMatch) {
+    if (hitMatch) {
+      // Standard attack roll action (may also reference a DC for secondary effects)
       attacks.push({
         name: action.name,
-        toHit: hitMatch ? parseInt(hitMatch[1], 10) : 0,
+        isSaveAttack: false,
+        toHit: parseInt(hitMatch[1], 10),
         damage: dmgMatch ? dmgMatch[1].trim() : '1d4',
+      });
+    } else if (dcMatch && saveMatch) {
+      // Pure saving throw action — no attack roll, defender saves against attacker's DC
+      const saveAbility = ABILITY_NAME_MAP[saveMatch[1].toLowerCase()] || 'str';
+      const halfOnSave = /half\s+(as\s+much\s+)?damage/i.test(entryText);
+      attacks.push({
+        name: action.name,
+        isSaveAttack: true,
+        dc: parseInt(dcMatch[1], 10),
+        saveAbility,
+        damage: dmgMatch ? dmgMatch[1].trim() : '1d4',
+        halfOnSave,
       });
     }
   }
 
   return attacks;
+}
+
+/**
+ * Get a token's saving throw bonus for a given ability.
+ * Uses the monster's explicit {@save} modifier when available,
+ * otherwise falls back to the raw ability modifier.
+ *
+ * @param {Object} token
+ * @param {string} ability - 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+ * @returns {number}
+ */
+export function getSaveBonus(token, ability) {
+  if (token.monsterData && token.monsterData.save) {
+    const saveVal = token.monsterData.save[ability];
+    if (saveVal !== undefined && saveVal !== null) {
+      const parsed = parseInt(String(saveVal).replace(/\s/g, ''), 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+  }
+  // Fall back to ability modifier
+  return getModifier(token[ability] || 10);
+}
+
+/**
+ * Roll a saving throw action from attacker against target.
+ * The target rolls d20 + their save bonus versus the attacker's DC.
+ * Failed save → full damage; successful save → half damage (if halfOnSave) or none.
+ *
+ * @param {{name, dc, saveAbility, damage, halfOnSave}} attack
+ * @param {Object} attackerToken
+ * @param {Object} targetToken
+ * @returns {{d20Roll, saveMod, total, dc, saved, damage, msg}}
+ */
+export function rollSavingThrowAttack(attack, attackerToken, targetToken) {
+  const d20Roll = Math.floor(Math.random() * 20) + 1;
+  const saveMod = getSaveBonus(targetToken, attack.saveAbility);
+  const total = d20Roll + saveMod;
+  const dc = attack.dc;
+  const saved = total >= dc;
+  const abilityLabel = ABILITY_LABEL_MAP[attack.saveAbility] || attack.saveAbility.toUpperCase();
+
+  // Roll damage once; apply full damage on a failed save, half on a successful save
+  const baseDamage = rollDice(attack.damage);
+  let damageDealt = 0;
+  if (!saved) {
+    damageDealt = baseDamage;
+  } else if (attack.halfOnSave) {
+    damageDealt = Math.floor(baseDamage / 2);
+  }
+
+  if (damageDealt > 0) {
+    const newHp = Math.max(0, targetToken.hp - damageDealt);
+    targetToken.hp = newHp;
+    const combatant = state.combatants.find(c => c.tokenId === targetToken.id);
+    if (combatant) combatant.hp = newHp;
+    if (onAttackHitCb) onAttackHitCb(targetToken);
+  }
+
+  const modStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
+  const savedLabel = saved
+    ? `✅ <strong class="hit-label">Saved!</strong>`
+    : `❌ <strong class="miss-label">Failed save!</strong>`;
+
+  const dmgStr = damageDealt > 0
+    ? ` — <span class="dmg-result">${damageDealt} damage</span>` +
+      ` (${targetToken.name} → ${targetToken.hp}/${targetToken.maxHp} HP)`
+    : saved && !attack.halfOnSave
+      ? ` — <span class="dmg-result">No damage</span>`
+      : '';
+
+  const msg = `<strong>${attackerToken.name}</strong> uses <em>${attack.name}</em>: ` +
+    `<strong>${targetToken.name}</strong> rolls ${abilityLabel} save — ` +
+    `d20(${d20Roll})${modStr} = <strong>${total}</strong> vs DC ${dc} — ${savedLabel}${dmgStr}`;
+
+  return { d20Roll, saveMod, total, dc, saved, damage: damageDealt, msg };
 }
 
 /**
@@ -175,9 +283,14 @@ export function updateAttackActions(tokenId) {
   attacks.forEach((atk, idx) => {
     const opt = document.createElement('option');
     opt.value = idx;
-    const numHit = parseToHit(atk.toHit);
-    const modStr = numHit >= 0 ? `+${numHit}` : `${numHit}`;
-    opt.textContent = `${atk.name} (${modStr} to hit, ${atk.damage} dmg)`;
+    if (atk.isSaveAttack) {
+      const abilityLabel = ABILITY_LABEL_MAP[atk.saveAbility] || atk.saveAbility.toUpperCase();
+      opt.textContent = `${atk.name} (DC ${atk.dc} ${abilityLabel} save, ${atk.damage} dmg)`;
+    } else {
+      const numHit = parseToHit(atk.toHit);
+      const modStr = numHit >= 0 ? `+${numHit}` : `${numHit}`;
+      opt.textContent = `${atk.name} (${modStr} to hit, ${atk.damage} dmg)`;
+    }
     actionSel.appendChild(opt);
   });
 }
@@ -230,11 +343,15 @@ export function handleRollAttack() {
   const attack = attacks[parseInt(actionIdx, 10)];
   if (!attack) return;
 
-  const result = rollAttack(attack, attackerToken, targetToken);
+  const result = attack.isSaveAttack
+    ? rollSavingThrowAttack(attack, attackerToken, targetToken)
+    : rollAttack(attack, attackerToken, targetToken);
+
+  const isHit = attack.isSaveAttack ? result.damage > 0 : result.hit;
 
   resultEl.innerHTML = result.msg;
   // Reset to base classes (this removes any existing 'fade-out' class)
-  resultEl.className = `attack-result ${result.hit ? 'attack-hit' : 'attack-miss'}`;
+  resultEl.className = `attack-result ${isHit ? 'attack-hit' : 'attack-miss'}`;
   // Force a reflow so the browser processes the class removal before re-adding
   // 'fade-out', which restarts the CSS animation from the beginning
   void resultEl.offsetWidth;
@@ -242,7 +359,7 @@ export function handleRollAttack() {
 
   renderInitiativeList();
 
-  if (result.hit && targetToken.hp <= 0) {
+  if (targetToken.hp <= 0 && isHit) {
     showToast(`☠️ ${targetToken.name} has fallen!`, 'warning', 3000);
   }
 }
