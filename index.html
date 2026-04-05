@@ -58,10 +58,14 @@
         <div class="token-info-stats">
           <div class="stat-group">
             <label>Hit Points</label>
-            <div class="hp-control">
-              <button class="btn btn-sm btn-danger" id="btn-hp-minus">−</button>
+            <div class="hp-display-row">
               <span class="hp-display" id="info-hp">0/0</span>
-              <button class="btn btn-sm btn-primary" id="btn-hp-plus">+</button>
+            </div>
+            <div class="hp-control">
+              <input type="number" class="hp-input" id="hp-amount" min="0" placeholder="amt" />
+              <button class="btn btn-sm btn-secondary" id="btn-hp-set">Set</button>
+              <button class="btn btn-sm btn-primary" id="btn-hp-add">Add</button>
+              <button class="btn btn-sm btn-danger" id="btn-hp-sub">Sub</button>
             </div>
             <div class="hp-bar-container">
               <div class="hp-bar hp-full" id="info-hp-bar" style="width: 100%"></div>
