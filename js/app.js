@@ -196,12 +196,13 @@ function setupTokenInfoPanel() {
     attackListEl.addEventListener('click', (e) => {
       const atkBtn = e.target.closest('.sb-atk-roll-btn');
       if (atkBtn) {
+        const attackRow = atkBtn.closest('.sb-attack-row');
         const bonus = parseInt(atkBtn.dataset.bonus, 10);
         const d20 = Math.floor(Math.random() * 20) + 1;
         const total = d20 + bonus;
         const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
-        const name = atkBtn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Attack';
-        const resultEl = atkBtn.closest('.sb-attack-row')?.querySelector('.sb-row-atk-result');
+        const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Attack';
+        const resultEl = attackRow?.querySelector('.sb-row-atk-result');
         if (resultEl) {
           const boldName = document.createElement('strong');
           boldName.textContent = name;
@@ -214,6 +215,7 @@ function setupTokenInfoPanel() {
 
       const dmgBtn = e.target.closest('.sb-dmg-roll-btn');
       if (dmgBtn) {
+        const attackRow = dmgBtn.closest('.sb-attack-row');
         const damageParts = dmgBtn.dataset.damage.split('|');
         let totalDmg = 0;
         const rolls = [];
@@ -222,8 +224,8 @@ function setupTokenInfoPanel() {
           totalDmg += result;
           rolls.push(`${dice}(${result})`);
         });
-        const name = dmgBtn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
-        const resultEl = dmgBtn.closest('.sb-attack-row')?.querySelector('.sb-row-dmg-result');
+        const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
+        const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
         if (resultEl) {
           const boldName = document.createElement('strong');
           boldName.textContent = name;
