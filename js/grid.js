@@ -207,9 +207,12 @@ function createTokenElement(token) {
     el.classList.add('token-dead');
   }
 
+  const hpPct = token.maxHp > 0 ? Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100)) : 100;
   el.innerHTML = `
     <span class="token-abbr">${token.abbr}</span>
-    <div class="token-hp-pip ${getHpColorClass(token.hp, token.maxHp)}"></div>
+    <div class="token-hp-track">
+      <div class="token-hp-pip ${getHpColorClass(token.hp, token.maxHp)}" style="width: ${hpPct}%"></div>
+    </div>
   `;
 
   return el;

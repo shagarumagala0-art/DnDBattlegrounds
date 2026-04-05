@@ -408,7 +408,7 @@ body::before {
   pointer-events: none;
 }
 
-.token-hp-pip {
+.token-hp-track {
   position: absolute;
   bottom: 4px;
   left: 50%;
@@ -416,6 +416,15 @@ body::before {
   width: 28px;
   height: 3px;
   border-radius: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.token-hp-pip {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.2s ease;
   pointer-events: none;
 }
 
