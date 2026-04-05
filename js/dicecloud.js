@@ -232,7 +232,7 @@ export function renderCharacterList() {
       <div class="empty-state">
         <div class="empty-icon">👤</div>
         <p>No party members yet.</p>
-        <p class="empty-hint">Import from DiceCloud or add a custom player above.</p>
+        <p class="empty-hint">Paste your sheet link above to import a character.</p>
       </div>`;
     return;
   }
