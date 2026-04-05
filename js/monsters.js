@@ -23,22 +23,30 @@ const SAVE_LABEL_MAP = Object.fromEntries(SAVE_ABILITIES.map(({ key, label }) =>
 const SKILL_CHECK_LABELS = { perception: 'Perception', stealth: 'Stealth', spellcasting: 'Spellcasting' };
 
 /**
- * List of bestiary JSON files to load from the /data/ directory.
- * Add filenames here to include additional bestiaries — all monsters are merged.
- */
-const BESTIARY_FILES = [
-  'bestiary-ftd.json',
-  'bestiary-basic.json',
-];
-
-/**
- * Load bestiary data from all JSON files in BESTIARY_FILES.
- * Files that cannot be fetched are skipped gracefully.
+ * Load bestiary data from all JSON files listed in data/bestiary-manifest.json.
+ * To add a new bestiary, simply add its filename to that manifest — no code
+ * changes are required. Files that cannot be fetched are skipped gracefully.
  */
 export async function loadBestiaries() {
   const allMonsters = [];
 
-  for (const filename of BESTIARY_FILES) {
+  let bestiaryFiles = [];
+  try {
+    const manifestResponse = await fetch('./data/bestiary-manifest.json');
+    if (!manifestResponse.ok) throw new Error(`HTTP ${manifestResponse.status}`);
+    const parsed = await manifestResponse.json();
+    if (Array.isArray(parsed) && parsed.every(f => typeof f === 'string')) {
+      bestiaryFiles = parsed;
+    } else {
+      throw new Error('Manifest is not an array of strings');
+    }
+  } catch (err) {
+    console.warn('Could not load bestiary-manifest.json:', err.message);
+    showToast('⚠️ Could not load bestiary manifest', 'error');
+    return;
+  }
+
+  for (const filename of bestiaryFiles) {
     try {
       const response = await fetch(`./data/${filename}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
