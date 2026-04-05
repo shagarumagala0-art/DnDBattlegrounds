@@ -1,5 +1,6 @@
 import { state } from './state.js';
-import { generateId, getAbbr, getModifier, showToast } from './utils.js';
+import { generateId, getAbbr, getModifier, formatModifier, getSpellcastingModifier, showToast } from './utils.js';
+import { getProficiencyBonus } from './import.js';
 
 /**
  * List of CORS proxy prefixes to try (in order) when direct fetch fails.
@@ -107,6 +108,37 @@ export async function importCharacter(url) {
  * @returns {Object}
  */
 function parseDiceCloudData(data, charId) {
+  const level = data.level?.value || 1;
+  const profBonus = getProficiencyBonus(level);
+
+  // Saving throw proficiencies from DiceCloud property list
+  const saveProficiencies = {};
+  const saveKeys = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  if (Array.isArray(data.saves)) {
+    data.saves.forEach(save => {
+      const key = save.ability?.toLowerCase();
+      if (saveKeys.includes(key) && save.proficient) {
+        saveProficiencies[key] = true;
+      }
+    });
+  }
+
+  // Attacks from DiceCloud actions/attacks array
+  const attacks = [];
+  if (Array.isArray(data.attacks)) {
+    data.attacks.forEach(atk => {
+      if (!atk.name) return;
+      const hitBonus = parseInt(atk.rollBonus) || 0;
+      const damage = atk.damage || '1d4';
+      attacks.push({
+        name: atk.name,
+        hitBonus,
+        damageDice: [String(damage).trim()],
+        isAoe: false,
+      });
+    });
+  }
+
   return {
     id: generateId(),
     diceCloudId: charId,
@@ -121,7 +153,11 @@ function parseDiceCloudData(data, charId) {
     wis: data.abilities?.wis?.value || 10,
     cha: data.abilities?.cha?.value || 10,
     class: data.classes?.[0]?.name || 'Adventurer',
-    level: data.level?.value || 1,
+    level,
+    proficiencyBonus: profBonus,
+    saveProficiencies,
+    attacks,
+    source: 'dicecloud',
   };
 }
 
@@ -158,6 +194,8 @@ export function createCharacterToken(charData) {
  * @returns {Object}
  */
 export function createManualCharacter(formData) {
+  const attacks = Array.isArray(formData.attacks) ? formData.attacks : [];
+  const level = parseInt(formData.level) || 1;
   const charData = {
     id: generateId(),
     name: formData.name || 'Player',
@@ -170,7 +208,12 @@ export function createManualCharacter(formData) {
     int: parseInt(formData.int) || 10,
     wis: parseInt(formData.wis) || 10,
     cha: parseInt(formData.cha) || 10,
-    manual: true,
+    class: formData.class || 'Adventurer',
+    level,
+    proficiencyBonus: getProficiencyBonus(level),
+    saveProficiencies: {},
+    attacks,
+    source: 'manual',
   };
 
   state.characters.push(charData);
@@ -199,20 +242,22 @@ export function renderCharacterList() {
   state.characters.forEach(char => {
     const tokenOnGrid = state.tokens.find(t => t.characterData?.id === char.id || t.id === char.tokenId);
     const isOnGrid = !!tokenOnGrid;
+    const sourceIcon = { dndbeyond: '📘', dicecloud: '☁️', gsheet: '📊', manual: '✏️' }[char.source] || '👤';
 
     const card = document.createElement('div');
     card.className = 'character-card';
     card.innerHTML = `
       <div class="char-badge">${getAbbr(char.name)}</div>
       <div class="char-details">
-        <div class="char-name">${char.name}</div>
+        <div class="char-name">${char.name} <span class="char-source-icon" title="${char.source || 'manual'}">${sourceIcon}</span></div>
         <div class="char-stats">
           <span>HP: ${char.maxHp}</span>
           <span>AC: ${char.ac}</span>
-          <span>DEX: ${char.dex} (${formatMod(getModifier(char.dex))})</span>
+          ${char.level ? `<span>Lv ${char.level} ${char.class || ''}</span>` : ''}
         </div>
       </div>
       <div class="char-actions">
+        <button class="btn btn-sm btn-gold" data-view-char="${char.id}">📋 Sheet</button>
         ${isOnGrid
           ? `<span class="on-grid-badge">On Grid</span>`
           : `<button class="btn btn-sm btn-primary" data-char-id="${char.id}">⚔️ To Arena</button>`
@@ -220,6 +265,10 @@ export function renderCharacterList() {
         <button class="btn btn-sm btn-danger" data-remove-char="${char.id}">✕</button>
       </div>
     `;
+
+    card.querySelector('[data-view-char]')?.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('viewCharSheet', { detail: { charId: char.id } }));
+    });
 
     if (!isOnGrid) {
       card.querySelector('[data-char-id]')?.addEventListener('click', () => {
@@ -260,4 +309,165 @@ function showStatus(el, message, type) {
  */
 function formatMod(mod) {
   return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+/**
+ * Return an array of attacks for a player character in the same format
+ * used by parseMonsterAttacks() so the token info panel can render them.
+ * @param {Object} charData
+ * @returns {Array<{name:string, isAoe:boolean, hitBonus:number|null, damageDice:string[]}>}
+ */
+export function getCharacterAttacks(charData) {
+  if (!charData) return [];
+  return (charData.attacks || []).map(atk => ({
+    name: atk.name || 'Attack',
+    isAoe: !!(atk.isAoe),
+    hitBonus: atk.isAoe ? null : (atk.hitBonus ?? 0),
+    damageDice: Array.isArray(atk.damageDice) ? atk.damageDice : [String(atk.damageDice || '1d4')],
+  }));
+}
+
+/**
+ * Generate HTML string for a player character sheet (similar to monster statblock).
+ * @param {Object} char
+ * @returns {string}
+ */
+export function parseCharacterStatblock(char) {
+  const strMod = getModifier(char.str || 10);
+  const dexMod = getModifier(char.dex || 10);
+  const conMod = getModifier(char.con || 10);
+  const intMod = getModifier(char.int || 10);
+  const wisMod = getModifier(char.wis || 10);
+  const chaMod = getModifier(char.cha || 10);
+
+  const prof = char.proficiencyBonus || getProficiencyBonus(char.level || 1);
+  const saves = char.saveProficiencies || {};
+
+  // Compute save bonus: raw mod + prof if proficient
+  const getSaveBonus = (key, rawMod) => rawMod + (saves[key] ? prof : 0);
+
+  const { mod: spellMod, ability: spellAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
+  const perceptionMod = wisMod; // simplified — no full skill list stored
+  const stealthMod = dexMod;
+
+  const SAVE_ABILITIES = [
+    { key: 'str', label: 'STR', mod: strMod },
+    { key: 'dex', label: 'DEX', mod: dexMod },
+    { key: 'con', label: 'CON', mod: conMod },
+    { key: 'int', label: 'INT', mod: intMod },
+    { key: 'wis', label: 'WIS', mod: wisMod },
+    { key: 'cha', label: 'CHA', mod: chaMod },
+  ];
+
+  let html = `
+    <div class="statblock">
+      <div class="sb-creature-info">
+        <p class="sb-type">${char.class || 'Adventurer'}${char.level ? ', Level ' + char.level : ''}</p>
+        ${char.source ? `<p class="sb-source">Imported from: ${char.source}</p>` : ''}
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-core">
+        <p><strong>Armor Class</strong> ${char.ac || 10}</p>
+        <p><strong>Hit Points</strong> ${char.maxHp || 20}</p>
+        ${char.proficiencyBonus ? `<p><strong>Proficiency Bonus</strong> +${char.proficiencyBonus}</p>` : ''}
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-ability-scores">`;
+
+  const abilityPairs = [
+    { name: 'STR', score: char.str || 10, mod: strMod },
+    { name: 'DEX', score: char.dex || 10, mod: dexMod },
+    { name: 'CON', score: char.con || 10, mod: conMod },
+    { name: 'INT', score: char.int || 10, mod: intMod },
+    { name: 'WIS', score: char.wis || 10, mod: wisMod },
+    { name: 'CHA', score: char.cha || 10, mod: chaMod },
+  ];
+
+  abilityPairs.forEach(({ name, score, mod }) => {
+    html += `
+        <div class="sb-ability">
+          <div class="sb-ability-name">${name}</div>
+          <div class="sb-ability-val">${score}</div>
+          <div class="sb-ability-mod">(${formatModifier(mod)})</div>
+        </div>`;
+  });
+
+  html += `</div>
+      <div class="sb-divider"></div>
+      <div class="sb-saves">
+        <div class="sb-saves-title">🎲 Saving Throws <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-saves-grid">`;
+
+  SAVE_ABILITIES.forEach(({ key, label, mod }) => {
+    const bonus = getSaveBonus(key, mod);
+    const bonusStr = formatModifier(bonus);
+    const isProficient = !!saves[key];
+    html += `<button class="sb-save-roll sb-save-throw-btn${isProficient ? ' sb-save-proficient' : ''}" data-ability="${key}" data-mod="${bonus}" title="${label} saving throw: ${bonusStr}">
+        <span class="sb-save-name">${label}</span>
+        <span class="sb-save-mod">${bonusStr}</span>
+      </button>`;
+  });
+
+  html += `</div>
+        <div class="sb-save-result sb-saving-throw-result"></div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-skill-checks">
+        <div class="sb-saves-title">🎯 Skill Checks <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-skill-checks-grid">
+          <button class="sb-save-roll sb-skill-check" data-check="perception" data-mod="${perceptionMod}" title="Perception check (WIS): ${formatModifier(perceptionMod)}">
+            <span class="sb-save-name">Percept.</span>
+            <span class="sb-save-mod">${formatModifier(perceptionMod)}</span>
+          </button>
+          <button class="sb-save-roll sb-skill-check" data-check="stealth" data-mod="${stealthMod}" title="Stealth check (DEX): ${formatModifier(stealthMod)}">
+            <span class="sb-save-name">Stealth</span>
+            <span class="sb-save-mod">${formatModifier(stealthMod)}</span>
+          </button>
+          <button class="sb-save-roll sb-skill-check" data-check="spellcasting" data-mod="${spellMod}" title="Spellcasting (${spellAbility}): ${formatModifier(spellMod)}">
+            <span class="sb-save-name">Spell.</span>
+            <span class="sb-save-mod">${formatModifier(spellMod)}</span>
+          </button>
+        </div>
+        <div class="sb-save-result sb-skill-result"></div>
+      </div>`;
+
+  // Attacks section
+  const attacks = getCharacterAttacks(char);
+  if (attacks.length > 0) {
+    html += `<div class="sb-divider"></div>
+      <div class="sb-attacks">
+        <div class="sb-saves-title">⚔️ Attacks <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-attack-list">`;
+
+    attacks.forEach(atk => {
+      html += `<div class="sb-attack-row">
+          <div class="sb-attack-row-header">
+            <span class="sb-attack-name" title="${atk.name}">${atk.name}</span>
+            <div class="sb-attack-btns">`;
+
+      if (!atk.isAoe) {
+        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${atk.name}: to hit">
+                <span class="sb-atk-label">ATK</span>
+                <span class="sb-atk-val">${formatModifier(atk.hitBonus)}</span>
+              </button>`;
+      }
+
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" title="${atk.name}: damage">
+              <span class="sb-atk-label">DMG</span>
+              <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
+            </button>`;
+
+      html += `</div></div>
+          <div class="sb-attack-row-results">`;
+      if (!atk.isAoe) html += `<div class="sb-row-atk-result"></div>`;
+      html += `<div class="sb-row-dmg-result"></div>
+          </div>
+        </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  html += `</div>`;
+  return html;
 }
