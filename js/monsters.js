@@ -203,7 +203,7 @@ export function showStatblock(monster) {
 
   // Wire up saving throw roll buttons
   const saveResultEl = bodyEl.querySelector('.sb-saving-throw-result');
-  bodyEl.querySelectorAll('.sb-save-roll:not(.sb-skill-check)').forEach(btn => {
+  bodyEl.querySelectorAll('.sb-save-throw-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ability = btn.dataset.ability;
       const mod = parseInt(btn.dataset.mod, 10);
@@ -386,7 +386,7 @@ export function parseStatblock(monster) {
     const bonus = getMonsterSaveBonus(monster, key);
     const bonusStr = formatModifier(bonus);
     const hasProficiency = monster.save && monster.save[key] !== undefined;
-    html += `<button class="sb-save-roll${hasProficiency ? ' sb-save-proficient' : ''}" data-ability="${key}" data-mod="${bonus}" title="${label} saving throw: ${bonusStr}">
+    html += `<button class="sb-save-roll sb-save-throw-btn${hasProficiency ? ' sb-save-proficient' : ''}" data-ability="${key}" data-mod="${bonus}" title="${label} saving throw: ${bonusStr}">
         <span class="sb-save-name">${label}</span>
         <span class="sb-save-mod">${bonusStr}</span>
       </button>`;
@@ -398,12 +398,10 @@ export function parseStatblock(monster) {
       <div class="sb-divider"></div>`;
 
   // Skill Checks: Perception (WIS), Stealth (DEX), Spellcasting (highest of INT/WIS/CHA)
-  const perceptionBonus = (monster.skill && monster.skill.perception !== undefined)
-    ? parseInt(monster.skill.perception, 10) || wisMod
-    : wisMod;
-  const stealthBonus = (monster.skill && monster.skill.stealth !== undefined)
-    ? parseInt(monster.skill.stealth, 10) || dexMod
-    : dexMod;
+  const perceptionParsed = monster.skill ? parseInt(monster.skill.perception, 10) : NaN;
+  const perceptionBonus = !isNaN(perceptionParsed) ? perceptionParsed : wisMod;
+  const stealthParsed = monster.skill ? parseInt(monster.skill.stealth, 10) : NaN;
+  const stealthBonus = !isNaN(stealthParsed) ? stealthParsed : dexMod;
   const { mod: spellcastingBonus, ability: spellcastingAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
 
   html += `<div class="sb-skill-checks">

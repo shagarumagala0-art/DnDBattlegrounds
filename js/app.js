@@ -203,10 +203,10 @@ export function updateTokenInfoPanel(token) {
 
   // Skill checks: use monster proficiency bonus if available, else raw ability modifier
   const monsterData = token.monsterData;
-  const perceptionMod = (monsterData?.skill?.perception !== undefined)
-    ? (parseInt(monsterData.skill.perception, 10) || wisMod) : wisMod;
-  const stealthMod = (monsterData?.skill?.stealth !== undefined)
-    ? (parseInt(monsterData.skill.stealth, 10) || dexMod) : dexMod;
+  const perceptionParsed = monsterData ? parseInt(monsterData.skill?.perception, 10) : NaN;
+  const perceptionMod = !isNaN(perceptionParsed) ? perceptionParsed : wisMod;
+  const stealthParsed = monsterData ? parseInt(monsterData.skill?.stealth, 10) : NaN;
+  const stealthMod = !isNaN(stealthParsed) ? stealthParsed : dexMod;
   const { mod: spellcastingMod, ability: spellcastingAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
 
   // Saving throw: use monster save proficiency if available, else raw ability modifier
