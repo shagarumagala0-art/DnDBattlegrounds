@@ -8,10 +8,8 @@ import {
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect
 } from './grid.js';
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken } from './monsters.js';
-import { rollAllInitiatives, nextTurn, resetCombat, renderInitiativeList, updateTurnInfo, updateRoundCounter, addCombatant, removeCombatant, onCombatUpdate } from './combat.js';
 import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList } from './dicecloud.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId } from './utils.js';
-import { populateAttackPanel, updateAttackActions, handleRollAttack, onAttackHit } from './attack.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -21,23 +19,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupGrid();
   setupArenaToolbar();
   setupMonsterTab();
-  setupCombatTab();
   setupCharactersTab();
   setupOverlays();
   setupTokenInfoPanel();
-  setupAttackPanel();
-
-  onCombatUpdate(() => {
-    updateTurnInfo();
-    updateHeaderRound();
-    populateAttackPanel();
-  });
-
-  // Refresh attack panel when HP changes from a hit
-  onAttackHit((token) => {
-    renderTokens();
-    updateTokenInfoPanelIfSelected(token);
-  });
 
   // Load monster data
   await loadBestiaries();
@@ -55,7 +39,6 @@ function setupMobileViewport() {
     if (e.target.closest('#grid-container')) return; // allow grid scroll
     if (e.target.closest('.overlay-content')) return; // allow overlay scroll
     if (e.target.closest('#monster-results')) return; // allow monster list scroll
-    if (e.target.closest('#initiative-list')) return; // allow combat list scroll
     if (e.target.closest('#tab-characters')) return; // allow characters tab scroll
     e.preventDefault();
   }, { passive: false });
@@ -87,11 +70,6 @@ function setupTabs() {
         const cr = document.getElementById('cr-filter')?.value || '';
         const type = document.getElementById('type-filter')?.value || '';
         renderMonsterList(searchMonsters(query, cr, type));
-      }
-      if (tab === 'combat') {
-        renderInitiativeList();
-        updateRoundCounter();
-        populateAttackPanel();
       }
       if (tab === 'characters') {
         renderCharacterList();
@@ -137,9 +115,7 @@ function setupArenaToolbar() {
     if (state.tokens.length === 0) return;
     if (confirm('Clear all tokens from the arena?')) {
       clearGrid();
-      resetCombat();
       hideTokenInfoPanel();
-      populateAttackPanel();
       showToast('🗑️ Arena cleared', 'info');
     }
   });
@@ -154,8 +130,6 @@ function setupTokenInfoPanel() {
     if (token) {
       updateTokenInfoPanel(token);
       renderTokens();
-      // Sync combatant display
-      updateCombatantHp(token);
     }
   });
 
@@ -165,28 +139,16 @@ function setupTokenInfoPanel() {
     if (token) {
       updateTokenInfoPanel(token);
       renderTokens();
-      updateCombatantHp(token);
     }
   });
 
   document.getElementById('btn-remove-token')?.addEventListener('click', () => {
     if (!state.selectedToken) return;
     const id = state.selectedToken.id;
-    removeCombatant(id);
     removeTokenFromGrid(id);
     hideTokenInfoPanel();
-    populateAttackPanel();
     showToast('🗑️ Token removed', 'info');
   });
-}
-
-function updateCombatantHp(token) {
-  const combatant = state.combatants.find(c => c.tokenId === token.id);
-  if (combatant) {
-    combatant.hp = token.hp;
-    renderInitiativeList();
-  }
-  updateTurnInfo();
 }
 
 export function updateTokenInfoPanel(token) {
@@ -198,7 +160,6 @@ export function updateTokenInfoPanel(token) {
   document.getElementById('info-type').textContent = token.type === 'monster' ? '👹 Monster' : '🧙 Player';
   document.getElementById('info-hp').textContent = `${token.hp}/${token.maxHp}`;
   document.getElementById('info-ac').textContent = token.ac;
-  document.getElementById('info-initiative').textContent = token.initiative !== null ? token.initiative : '—';
   document.getElementById('info-position').textContent = `(${token.col + 1}, ${token.row + 1})`;
 
   const hpBar = document.getElementById('info-hp-bar');
@@ -240,29 +201,6 @@ function setupMonsterTab() {
   searchInput?.addEventListener('input', doSearch);
   crFilter?.addEventListener('change', doSearch);
   typeFilter?.addEventListener('change', doSearch);
-}
-
-// ─── Combat Tab ───────────────────────────────────────────────────────────────
-
-function setupCombatTab() {
-  document.getElementById('btn-roll-initiative')?.addEventListener('click', () => {
-    rollAllInitiatives();
-    populateAttackPanel();
-  });
-  document.getElementById('btn-next-turn')?.addEventListener('click', nextTurn);
-  document.getElementById('btn-reset-combat')?.addEventListener('click', () => {
-    resetCombat();
-    updateTurnInfo();
-    updateHeaderRound();
-    populateAttackPanel();
-  });
-}
-
-function updateHeaderRound() {
-  const el = document.getElementById('header-round');
-  if (el) el.textContent = state.round > 0 ? `Round ${state.round}` : 'Round —';
-  updateRoundCounter();
-  updateTurnInfo();
 }
 
 // ─── Characters Tab ───────────────────────────────────────────────────────────
@@ -321,9 +259,7 @@ function setupCharactersTab() {
       return;
     }
 
-    addCombatant(placed);
     renderCharacterList();
-    populateAttackPanel();
     const nameEl = document.getElementById('player-name');
     const hpEl = document.getElementById('player-hp');
     const acEl = document.getElementById('player-ac');
@@ -357,9 +293,7 @@ function setupCharactersTab() {
       return;
     }
 
-    addCombatant(placed);
     renderCharacterList();
-    populateAttackPanel();
     showToast(`🧙 ${char.name} added to arena!`, 'success');
     switchTab('arena');
   });
@@ -405,14 +339,12 @@ function setupOverlays() {
         showToast('⚠️ Arena is full!', 'warning');
         break;
       }
-      addCombatant(placed);
       added++;
     }
 
     closeAddModal();
     if (added > 0) {
       showToast(`🐉 Added ${added}x ${monster.name} to arena!`, 'success');
-      populateAttackPanel();
       switchTab('arena');
     }
   });
@@ -425,33 +357,7 @@ function closeAddModal() {
   state.pendingMonster = null;
 }
 
-// ─── Attack Panel ─────────────────────────────────────────────────────────────
-
-function setupAttackPanel() {
-  const attackerSel = document.getElementById('attack-attacker');
-  const rollBtn = document.getElementById('btn-roll-attack');
-
-  attackerSel?.addEventListener('change', () => {
-    updateAttackActions(attackerSel.value);
-  });
-
-  rollBtn?.addEventListener('click', () => {
-    handleRollAttack();
-    // Refresh attack panel dropdowns after HP changes
-    populateAttackPanel();
-  });
-
-  // Populate once tokens are available
-  populateAttackPanel();
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function updateTokenInfoPanelIfSelected(token) {
-  if (state.selectedToken && state.selectedToken.id === token.id) {
-    updateTokenInfoPanel(token);
-  }
-}
 
 function switchTab(tabName) {
   const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);

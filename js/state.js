@@ -11,15 +11,6 @@ export const state = {
   /** @type {Array<Object>} Loaded monster data from bestiaries */
   monsters: [],
 
-  /** @type {Array<CombatantData>} Current combat order (sorted by initiative) */
-  combatants: [],
-
-  /** @type {number} Index into combatants array for current turn */
-  activeCombatantIdx: 0,
-
-  /** @type {number} Current round number (0 = not in combat) */
-  round: 0,
-
   /** @type {Array<Object>} Imported/created player characters */
   characters: [],
 
@@ -44,20 +35,8 @@ export const state = {
  * @property {number} int - Intelligence score
  * @property {number} wis - Wisdom score
  * @property {number} cha - Charisma score
- * @property {number} dexMod - Dexterity modifier
- * @property {number|null} initiative - Initiative roll result
  * @property {string} color - Token color scheme
- * @property {Object|null} monsterData - Reference to original monster data (includes .save for explicit saving throw bonuses)
- */
-
-/**
- * @typedef {Object} CombatantData
- * @property {string} tokenId - Reference to token ID
- * @property {string} name - Name for display
- * @property {number} initiative - Initiative value
- * @property {'monster'|'player'} type - Combatant type
- * @property {number} hp - Current HP
- * @property {number} maxHp - Max HP
+ * @property {Object|null} monsterData - Reference to original monster data
  */
 
 /**
@@ -89,9 +68,6 @@ export function removeToken(id) {
   if (state.selectedToken && state.selectedToken.id === id) {
     state.selectedToken = null;
   }
-  // Also remove from combatants
-  const cidx = state.combatants.findIndex(c => c.tokenId === id);
-  if (cidx !== -1) state.combatants.splice(cidx, 1);
 }
 
 /**
@@ -104,8 +80,5 @@ export function changeTokenHp(id, delta) {
   const token = findToken(id);
   if (!token) return null;
   token.hp = Math.max(0, Math.min(token.maxHp, token.hp + delta));
-  // Sync combatant HP
-  const combatant = state.combatants.find(c => c.tokenId === id);
-  if (combatant) combatant.hp = token.hp;
   return token;
 }

@@ -20,14 +20,13 @@
     <header id="app-header">
       <div class="header-logo">🐉</div>
       <h1 class="header-title">DnD Arena Pro</h1>
-      <div class="header-round" id="header-round">Round —</div>
+
     </header>
 
     <!-- ── Tab Navigation ────────────────────────────────── -->
     <nav id="tab-nav">
       <button class="tab-btn active" data-tab="arena">⚔️ Arena</button>
       <button class="tab-btn" data-tab="monsters">🐉 Monsters</button>
-      <button class="tab-btn" data-tab="combat">🎲 Combat</button>
       <button class="tab-btn" data-tab="characters">👤 Party</button>
     </nav>
 
@@ -40,7 +39,6 @@
         <button class="btn btn-primary btn-sm" id="btn-add-monster">🐉 Monster</button>
         <button class="btn btn-secondary btn-sm" id="btn-add-player">🧙 Player</button>
         <button class="btn btn-danger btn-sm" id="btn-clear-arena">🗑️ Clear</button>
-        <div class="turn-info" id="turn-info">No combat</div>
       </div>
 
       <div id="grid-container">
@@ -72,10 +70,6 @@
           <div class="stat-group">
             <label>AC</label>
             <span id="info-ac">—</span>
-          </div>
-          <div class="stat-group">
-            <label>Initiative</label>
-            <span id="info-initiative">—</span>
           </div>
           <div class="stat-group">
             <label>Position</label>
@@ -145,52 +139,6 @@
           <div class="empty-icon">⏳</div>
           <p>Loading monsters...</p>
         </div>
-      </div>
-
-    </section>
-
-    <!-- ══════════════════════════════════════════════════ -->
-    <!-- Combat Tab                                         -->
-    <!-- ══════════════════════════════════════════════════ -->
-    <section id="tab-combat" class="tab-content">
-
-      <div class="combat-toolbar">
-        <button class="btn btn-primary btn-sm" id="btn-roll-initiative">🎲 Roll Initiative</button>
-        <button class="btn btn-secondary btn-sm" id="btn-next-turn">Next ▶</button>
-        <button class="btn btn-danger btn-sm" id="btn-reset-combat">🔄 Reset</button>
-        <div class="round-counter">
-          Round <span id="round-counter">0</span>
-        </div>
-      </div>
-
-      <div id="initiative-list">
-        <div class="empty-state">
-          <div class="empty-icon">🎲</div>
-          <p>No combat in progress.</p>
-          <p class="empty-hint">Add tokens to the arena, then click "Roll Initiative".</p>
-        </div>
-      </div>
-
-      <!-- ── Attack Panel ──────────────────────────────────── -->
-      <div id="attack-panel" class="attack-panel">
-        <h3 class="section-title attack-panel-title">⚔️ Roll Attack</h3>
-        <div class="attack-form">
-          <div class="form-row">
-            <select id="attack-attacker" class="select-input" title="Attacker">
-              <option value="">— Attacker —</option>
-            </select>
-            <select id="attack-action" class="select-input" title="Attack action">
-              <option value="">— Attack —</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <select id="attack-target" class="select-input" title="Target">
-              <option value="">— Target —</option>
-            </select>
-            <button class="btn btn-primary btn-sm" id="btn-roll-attack">🎲 Roll</button>
-          </div>
-        </div>
-        <div id="attack-result" class="attack-result"></div>
       </div>
 
     </section>
