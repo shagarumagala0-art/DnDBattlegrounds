@@ -23,22 +23,33 @@ const SAVE_LABEL_MAP = Object.fromEntries(SAVE_ABILITIES.map(({ key, label }) =>
 const SKILL_CHECK_LABELS = { perception: 'Perception', stealth: 'Stealth', spellcasting: 'Spellcasting' };
 
 /**
- * List of bestiary JSON files to load from the /data/ directory.
- * Add filenames here to include additional bestiaries — all monsters are merged.
- */
-const BESTIARY_FILES = [
-  'bestiary-ftd.json',
-  'bestiary-basic.json',
-];
-
-/**
- * Load bestiary data from all JSON files in BESTIARY_FILES.
- * Files that cannot be fetched are skipped gracefully.
+ * Discover all .json files in the /data/ directory by parsing the server's
+ * HTML directory listing, then load each one as a bestiary.
+ * Any .json file placed in /data/ is automatically included — no manifest or
+ * code changes required.
  */
 export async function loadBestiaries() {
   const allMonsters = [];
 
-  for (const filename of BESTIARY_FILES) {
+  // Fetch the directory listing and extract every .json filename from it.
+  let bestiaryFiles = [];
+  try {
+    const dirResponse = await fetch('./data/');
+    if (!dirResponse.ok) throw new Error(`HTTP ${dirResponse.status}`);
+    const html = await dirResponse.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    bestiaryFiles = Array.from(doc.querySelectorAll('a[href]'))
+      .map(a => decodeURIComponent(a.getAttribute('href')))
+      .filter(href => href.endsWith('.json') && !href.includes('/'))
+      .map(href => href.split('/').pop());
+  } catch (err) {
+    console.warn('Could not read data/ directory listing:', err.message);
+    showToast('⚠️ Could not discover bestiary files', 'error');
+    return;
+  }
+
+  for (const filename of bestiaryFiles) {
     try {
       const response = await fetch(`./data/${filename}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
