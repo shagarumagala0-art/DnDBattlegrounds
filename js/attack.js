@@ -347,11 +347,11 @@ export function handleRollAttack() {
     ? rollSavingThrowAttack(attack, attackerToken, targetToken)
     : rollAttack(attack, attackerToken, targetToken);
 
-  const isHit = attack.isSaveAttack ? result.damage > 0 : result.hit;
+  const dealtDamage = attack.isSaveAttack ? result.damage > 0 : result.hit;
 
   resultEl.innerHTML = result.msg;
   // Reset to base classes (this removes any existing 'fade-out' class)
-  resultEl.className = `attack-result ${isHit ? 'attack-hit' : 'attack-miss'}`;
+  resultEl.className = `attack-result ${dealtDamage ? 'attack-hit' : 'attack-miss'}`;
   // Force a reflow so the browser processes the class removal before re-adding
   // 'fade-out', which restarts the CSS animation from the beginning
   void resultEl.offsetWidth;
@@ -359,7 +359,7 @@ export function handleRollAttack() {
 
   renderInitiativeList();
 
-  if (targetToken.hp <= 0 && isHit) {
+  if (targetToken.hp <= 0 && dealtDamage) {
     showToast(`☠️ ${targetToken.name} has fallen!`, 'warning', 3000);
   }
 }
