@@ -233,8 +233,12 @@ export function handleRollAttack() {
   const result = rollAttack(attack, attackerToken, targetToken);
 
   resultEl.innerHTML = result.msg;
+  // Reset to base classes (this removes any existing 'fade-out' class)
   resultEl.className = `attack-result ${result.hit ? 'attack-hit' : 'attack-miss'}`;
-  resultEl.classList.remove('hidden');
+  // Force a reflow so the browser processes the class removal before re-adding
+  // 'fade-out', which restarts the CSS animation from the beginning
+  void resultEl.offsetWidth;
+  resultEl.classList.add('fade-out');
 
   renderInitiativeList();
 

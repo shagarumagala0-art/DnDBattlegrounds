@@ -901,24 +901,43 @@ body::before {
 }
 
 .attack-result {
-  margin-top: 8px;
-  padding: 8px 10px;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: 700px;
+  width: calc(100% - 40px);
+  padding: 10px 14px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   line-height: 1.5;
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-primary);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.attack-result.fade-out {
+  animation: attackResultFade 3s ease-out forwards;
+}
+
+@keyframes attackResultFade {
+  /* Visible for 75% of the duration (2.25s), then fades out over the final 25% (0.75s) */
+  0%   { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .attack-result.attack-hit {
   border-color: rgba(46,204,113,0.5);
-  background: rgba(46,204,113,0.08);
+  background: rgba(46,204,113,0.15);
 }
 
 .attack-result.attack-miss {
   border-color: rgba(192,57,43,0.5);
-  background: rgba(192,57,43,0.08);
+  background: rgba(192,57,43,0.15);
 }
 
 .crit-label { color: #f0c040; }
