@@ -47,7 +47,7 @@ export const state = {
  * @property {number} dexMod - Dexterity modifier
  * @property {number|null} initiative - Initiative roll result
  * @property {string} color - Token color scheme
- * @property {Object|null} monsterData - Reference to original monster data
+ * @property {Object|null} monsterData - Reference to original monster data (includes .save for explicit saving throw bonuses)
  */
 
 /**
