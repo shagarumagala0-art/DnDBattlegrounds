@@ -246,8 +246,7 @@ export function showStatblock(monster) {
     });
   });
 
-  // Wire up attack roll buttons
-  const attackResultEl = bodyEl.querySelector('.sb-attack-result');
+  // Wire up attack roll buttons — result displayed in the row's own ATK result line
   bodyEl.querySelectorAll('.sb-atk-roll-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const bonus = parseInt(btn.dataset.bonus, 10);
@@ -255,19 +254,20 @@ export function showStatblock(monster) {
       const total = d20 + bonus;
       const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
       const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Attack';
-      if (attackResultEl) {
+      const resultEl = btn.closest('.sb-attack-row')?.querySelector('.sb-row-atk-result');
+      if (resultEl) {
         const boldName = document.createElement('strong');
         boldName.textContent = name;
         const boldTotal = document.createElement('strong');
         boldTotal.textContent = String(total);
-        attackResultEl.replaceChildren(
+        resultEl.replaceChildren(
           `⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal
         );
       }
     });
   });
 
-  // Wire up damage roll buttons
+  // Wire up damage roll buttons — result displayed in the row's own DMG result line
   bodyEl.querySelectorAll('.sb-dmg-roll-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const damageParts = btn.dataset.damage.split('|');
@@ -279,12 +279,13 @@ export function showStatblock(monster) {
         rolls.push(`${dice}(${result})`);
       });
       const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
-      if (attackResultEl) {
+      const resultEl = btn.closest('.sb-attack-row')?.querySelector('.sb-row-dmg-result');
+      if (resultEl) {
         const boldName = document.createElement('strong');
         boldName.textContent = name;
         const boldTotal = document.createElement('strong');
         boldTotal.textContent = String(totalDmg);
-        attackResultEl.replaceChildren(
+        resultEl.replaceChildren(
           `💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal
         );
       }
@@ -536,27 +537,35 @@ export function parseStatblock(monster) {
     attacks.forEach(atk => {
       const displayName = cleanActionName(atk.name);
       html += `<div class="sb-attack-row">
-          <span class="sb-attack-name" title="${displayName}">${displayName}</span>
-          <div class="sb-attack-btns">`;
+          <div class="sb-attack-row-header">
+            <span class="sb-attack-name" title="${displayName}">${displayName}</span>
+            <div class="sb-attack-btns">`;
 
       if (!atk.isAoe) {
         const bonusStr = formatModifier(atk.hitBonus);
         html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${displayName}: to hit">
-              <span class="sb-atk-label">ATK</span>
-              <span class="sb-atk-val">${bonusStr}</span>
-            </button>`;
+                <span class="sb-atk-label">ATK</span>
+                <span class="sb-atk-val">${bonusStr}</span>
+              </button>`;
       }
 
       html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" title="${displayName}: damage">
-            <span class="sb-atk-label">DMG</span>
-            <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
-          </button>`;
+              <span class="sb-atk-label">DMG</span>
+              <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
+            </button>`;
 
-      html += `</div></div>`;
+      html += `</div></div>
+          <div class="sb-attack-row-results">`;
+
+      if (!atk.isAoe) {
+        html += `<div class="sb-row-atk-result"></div>`;
+      }
+      html += `<div class="sb-row-dmg-result"></div>
+          </div>
+        </div>`;
     });
 
     html += `</div>
-        <div class="sb-save-result sb-attack-result"></div>
       </div>
       <div class="sb-divider"></div>`;
   }
