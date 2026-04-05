@@ -203,149 +203,20 @@
     <!-- ══════════════════════════════════════════════════ -->
     <section id="tab-characters" class="tab-content">
 
-      <!-- Import Source Tabs -->
-      <div class="import-source-tabs">
-        <button class="import-source-btn active" data-source="dicecloud">☁️ DiceCloud</button>
-        <button class="import-source-btn" data-source="dndbeyond">📘 D&amp;D Beyond</button>
-        <button class="import-source-btn" data-source="gsheet">📊 G-Sheet</button>
-      </div>
-
-      <!-- DiceCloud Import -->
-      <div class="import-source-panel active" id="import-panel-dicecloud">
-        <h3 class="section-title">☁️ Import from DiceCloud</h3>
-        <p class="section-desc">Paste a DiceCloud v2 share URL to import your character.</p>
-        <div class="import-form">
-          <input
-            type="url"
-            id="dicecloud-url"
-            placeholder="https://v2.dicecloud.com/character/..."
-            class="text-input"
-            autocomplete="off"
-          >
-          <button class="btn btn-primary" id="btn-import-character">Import</button>
-        </div>
-        <div id="import-status" class="import-status hidden"></div>
-      </div>
-
-      <!-- D&D Beyond Import -->
-      <div class="import-source-panel" id="import-panel-dndbeyond">
-        <h3 class="section-title">📘 Import from D&amp;D Beyond</h3>
-        <p class="section-desc">Export your character as JSON from D&amp;D Beyond (Character Settings → Export → JSON) and upload the file here.</p>
-        <div class="import-form">
-          <label class="file-upload-label" for="dndbeyond-file">
-            <span id="dndbeyond-file-name">Choose JSON file…</span>
-            <input type="file" id="dndbeyond-file" accept=".json,application/json" class="file-input-hidden">
-          </label>
-          <button class="btn btn-primary" id="btn-import-dndbeyond">Import</button>
-        </div>
-        <div id="dndbeyond-status" class="import-status hidden"></div>
-      </div>
-
-      <!-- G-Sheet Import -->
-      <div class="import-source-panel" id="import-panel-gsheet">
-        <h3 class="section-title">📊 Import from Google Sheets</h3>
-        <p class="section-desc">
-          Export your character as JSON from your Google Sheets character template, then paste the JSON below or upload the file.
-          <a href="#" class="gsheet-help-link" id="gsheet-help-toggle">How to export ▾</a>
-        </p>
-        <div class="gsheet-help hidden" id="gsheet-help">
-          <p>In your Google Sheet, open <strong>Extensions → Apps Script</strong> and paste the following function, then run it to copy the JSON to your clipboard:</p>
-          <pre class="code-block">function exportCharacterJSON() {
-  var s = SpreadsheetApp.getActiveSpreadsheet();
-  var data = {
-    charName: s.getRangeByName("CharacterName").getValue(),
-    maxHP: s.getRangeByName("HPMax").getValue(),
-    currentHP: s.getRangeByName("HPCurrent").getValue(),
-    AC: s.getRangeByName("AC").getValue(),
-    STR: s.getRangeByName("STR").getValue(),
-    DEX: s.getRangeByName("DEX").getValue(),
-    CON: s.getRangeByName("CON").getValue(),
-    INT: s.getRangeByName("INT").getValue(),
-    WIS: s.getRangeByName("WIS").getValue(),
-    CHA: s.getRangeByName("CHA").getValue(),
-    class: s.getRangeByName("Class").getValue(),
-    level: s.getRangeByName("Level").getValue()
-  };
-  Logger.log(JSON.stringify(data));
-}</pre>
-          <p class="section-desc">Alternatively, upload a JSON file you've exported from your sheet, or paste the JSON directly below.</p>
-        </div>
-        <div class="import-form">
-          <label class="file-upload-label" for="gsheet-file">
-            <span id="gsheet-file-name">Choose JSON file…</span>
-            <input type="file" id="gsheet-file" accept=".json,application/json" class="file-input-hidden">
-          </label>
-          <button class="btn btn-primary" id="btn-import-gsheet-file">Upload</button>
-        </div>
-        <textarea
-          id="gsheet-json"
-          class="text-input gsheet-textarea"
-          placeholder='Or paste JSON here: {"charName":"Aela","maxHP":32,"AC":15,"STR":16,...}'
-          rows="4"
+      <!-- Sheet Link Import -->
+      <h3 class="section-title">📊 Import Character Sheet</h3>
+      <p class="section-desc">Paste your Google Sheet link below to import your character.</p>
+      <div class="import-form">
+        <input
+          type="url"
+          id="sheet-link-url"
+          placeholder="https://docs.google.com/spreadsheets/d/..."
+          class="text-input"
           autocomplete="off"
-          spellcheck="false"
-        ></textarea>
-        <button class="btn btn-primary" id="btn-import-gsheet">Import from JSON</button>
-        <div id="gsheet-status" class="import-status hidden"></div>
+        >
+        <button class="btn btn-primary" id="btn-import-sheet-link">Import</button>
       </div>
-
-      <div class="divider"></div>
-
-      <h3 class="section-title">➕ Add Custom Player</h3>
-      <div class="custom-player-form">
-        <div class="form-row">
-          <input
-            type="text"
-            id="player-name"
-            placeholder="Character Name"
-            class="text-input"
-            autocomplete="off"
-          >
-          <input type="text" id="player-class" placeholder="Class" class="text-input" autocomplete="off">
-        </div>
-        <div class="form-row">
-          <input type="number" id="player-hp" placeholder="Max HP" class="text-input" min="1" max="999">
-          <input type="number" id="player-ac" placeholder="AC" class="text-input" min="1" max="30">
-          <input type="number" id="player-level" placeholder="Level" class="text-input" min="1" max="20" value="1">
-        </div>
-        <div class="form-row ability-scores">
-          <div class="ability-input">
-            <label>STR</label>
-            <input type="number" id="player-str" value="10" class="text-input" min="1" max="30">
-          </div>
-          <div class="ability-input">
-            <label>DEX</label>
-            <input type="number" id="player-dex" value="10" class="text-input" min="1" max="30">
-          </div>
-          <div class="ability-input">
-            <label>CON</label>
-            <input type="number" id="player-con" value="10" class="text-input" min="1" max="30">
-          </div>
-          <div class="ability-input">
-            <label>INT</label>
-            <input type="number" id="player-int" value="10" class="text-input" min="1" max="30">
-          </div>
-          <div class="ability-input">
-            <label>WIS</label>
-            <input type="number" id="player-wis" value="10" class="text-input" min="1" max="30">
-          </div>
-          <div class="ability-input">
-            <label>CHA</label>
-            <input type="number" id="player-cha" value="10" class="text-input" min="1" max="30">
-          </div>
-        </div>
-
-        <!-- Custom Attacks -->
-        <div class="custom-attacks-section">
-          <div class="custom-attacks-header">
-            <span class="section-title" style="font-size:0.85rem;padding:0;">⚔️ Attacks</span>
-            <button class="btn btn-sm btn-secondary" id="btn-add-attack-row" type="button">+ Add Attack</button>
-          </div>
-          <div id="custom-attack-rows"></div>
-        </div>
-
-        <button class="btn btn-secondary" id="btn-add-custom-player">⚔️ Add to Arena</button>
-      </div>
+      <div id="sheet-link-status" class="import-status hidden"></div>
 
       <div class="divider"></div>
       <h3 class="section-title" style="padding: 0 4px 8px;">👥 Party Members</h3>
@@ -353,7 +224,7 @@
         <div class="empty-state">
           <div class="empty-icon">👤</div>
           <p>No party members yet.</p>
-          <p class="empty-hint">Import a character or add a custom player above.</p>
+          <p class="empty-hint">Paste your sheet link above to import a character.</p>
         </div>
       </div>
 

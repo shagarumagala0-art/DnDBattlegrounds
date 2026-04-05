@@ -8,8 +8,8 @@ import {
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect
 } from './grid.js';
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
-import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
-import { parseDnDBeyondJSON, parseGSheetJSON, readJSONFile } from './import.js';
+import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
+import { parseGSheetJSON } from './import.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -460,193 +460,58 @@ function setupMonsterTab() {
 
 // ─── Characters Tab ───────────────────────────────────────────────────────────
 
-function setupCharactersTab() {
-  // ── Import source tab switching ─────────────────────────
-  document.querySelectorAll('.import-source-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const source = btn.dataset.source;
-      document.querySelectorAll('.import-source-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.import-source-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById(`import-panel-${source}`)?.classList.add('active');
-    });
-  });
+const SHEET_CORS_PROXIES = [
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+];
 
-  // ── DiceCloud import ────────────────────────────────────
-  document.getElementById('btn-import-character')?.addEventListener('click', async () => {
-    const url = document.getElementById('dicecloud-url')?.value || '';
-    const charData = await importCharacter(url);
+function setupCharactersTab() {
+  // ── Sheet link import ────────────────────────────────────
+  document.getElementById('btn-import-sheet-link')?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('sheet-link-status');
+    const url = document.getElementById('sheet-link-url')?.value?.trim();
+
+    if (!url) {
+      showImportStatus(statusEl, '⚠️ Please paste your sheet link first.', 'error');
+      return;
+    }
+
+    try {
+      new URL(url);
+    } catch {
+      showImportStatus(statusEl, '⚠️ Invalid URL. Please paste a valid Google Sheet link.', 'error');
+      return;
+    }
+
+    showImportStatus(statusEl, '⏳ Importing from sheet…', 'loading');
+
+    const endpoints = [url, ...SHEET_CORS_PROXIES.map(fn => fn(url))];
+    let charData = null;
+
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const response = await fetch(endpoints[i], { signal: controller.signal, mode: 'cors' });
+        clearTimeout(timeout);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        charData = parseGSheetJSON(text);
+        break;
+      } catch {
+        // Try next endpoint
+      }
+    }
+
     if (charData) {
       state.characters.push(charData);
       renderCharacterList();
+      showImportStatus(statusEl, `✅ Imported ${charData.name}!`, 'success');
+      const input = document.getElementById('sheet-link-url');
+      if (input) input.value = '';
+    } else {
+      showImportStatus(statusEl, '⚠️ Could not import from that link. Make sure your sheet is published and returns character JSON.', 'error');
     }
-  });
-
-  // ── D&D Beyond file import ──────────────────────────────
-  const ddbFileInput = document.getElementById('dndbeyond-file');
-  ddbFileInput?.addEventListener('change', () => {
-    const name = ddbFileInput.files?.[0]?.name || 'Choose JSON file…';
-    const el = document.getElementById('dndbeyond-file-name');
-    if (el) el.textContent = name;
-  });
-
-  document.getElementById('btn-import-dndbeyond')?.addEventListener('click', async () => {
-    const statusEl = document.getElementById('dndbeyond-status');
-    const file = ddbFileInput?.files?.[0];
-    if (!file) {
-      showImportStatus(statusEl, '⚠️ Please choose a JSON file first.', 'error');
-      return;
-    }
-    showImportStatus(statusEl, '⏳ Reading file…', 'loading');
-    try {
-      const raw = await readJSONFile(file);
-      const charData = parseDnDBeyondJSON(raw);
-      state.characters.push(charData);
-      renderCharacterList();
-      showImportStatus(statusEl, `✅ Imported ${charData.name} from D&D Beyond!`, 'success');
-      if (ddbFileInput) ddbFileInput.value = '';
-      const nameEl = document.getElementById('dndbeyond-file-name');
-      if (nameEl) nameEl.textContent = 'Choose JSON file…';
-    } catch (err) {
-      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
-    }
-  });
-
-  // ── G-sheet help toggle ─────────────────────────────────
-  document.getElementById('gsheet-help-toggle')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const help = document.getElementById('gsheet-help');
-    const toggle = document.getElementById('gsheet-help-toggle');
-    if (help) {
-      const hidden = help.classList.toggle('hidden');
-      if (toggle) toggle.textContent = hidden ? 'How to export ▾' : 'How to export ▴';
-    }
-  });
-
-  // ── G-sheet file upload ─────────────────────────────────
-  const gsheetFileInput = document.getElementById('gsheet-file');
-  gsheetFileInput?.addEventListener('change', () => {
-    const name = gsheetFileInput.files?.[0]?.name || 'Choose JSON file…';
-    const el = document.getElementById('gsheet-file-name');
-    if (el) el.textContent = name;
-  });
-
-  document.getElementById('btn-import-gsheet-file')?.addEventListener('click', async () => {
-    const statusEl = document.getElementById('gsheet-status');
-    const file = gsheetFileInput?.files?.[0];
-    if (!file) {
-      showImportStatus(statusEl, '⚠️ Please choose a JSON file first.', 'error');
-      return;
-    }
-    showImportStatus(statusEl, '⏳ Reading file…', 'loading');
-    try {
-      const raw = await readJSONFile(file);
-      const charData = parseGSheetJSON(raw);
-      state.characters.push(charData);
-      renderCharacterList();
-      showImportStatus(statusEl, `✅ Imported ${charData.name} from G-Sheet!`, 'success');
-      if (gsheetFileInput) gsheetFileInput.value = '';
-      const nameEl = document.getElementById('gsheet-file-name');
-      if (nameEl) nameEl.textContent = 'Choose JSON file…';
-    } catch (err) {
-      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
-    }
-  });
-
-  // ── G-sheet JSON paste import ───────────────────────────
-  document.getElementById('btn-import-gsheet')?.addEventListener('click', () => {
-    const statusEl = document.getElementById('gsheet-status');
-    const json = document.getElementById('gsheet-json')?.value?.trim();
-    if (!json) {
-      showImportStatus(statusEl, '⚠️ Please paste your character JSON first.', 'error');
-      return;
-    }
-    try {
-      const charData = parseGSheetJSON(json);
-      state.characters.push(charData);
-      renderCharacterList();
-      showImportStatus(statusEl, `✅ Imported ${charData.name} from G-Sheet JSON!`, 'success');
-      const jsonEl = document.getElementById('gsheet-json');
-      if (jsonEl) jsonEl.value = '';
-    } catch (err) {
-      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
-    }
-  });
-
-  // ── Custom attack rows ──────────────────────────────────
-  document.getElementById('btn-add-attack-row')?.addEventListener('click', () => {
-    addCustomAttackRow();
-  });
-
-  // ── Custom player form ──────────────────────────────────
-  document.getElementById('btn-add-custom-player')?.addEventListener('click', () => {
-    const name = document.getElementById('player-name')?.value?.trim();
-    const hp = parseInt(document.getElementById('player-hp')?.value);
-    const ac = parseInt(document.getElementById('player-ac')?.value);
-
-    if (!name) {
-      showToast('⚠️ Please enter a character name.', 'warning');
-      return;
-    }
-    if (!hp || hp < 1) {
-      showToast('⚠️ Please enter valid HP.', 'warning');
-      return;
-    }
-    if (!ac || ac < 1) {
-      showToast('⚠️ Please enter valid AC.', 'warning');
-      return;
-    }
-
-    // Collect attacks from custom attack rows
-    const attacks = collectCustomAttacks();
-
-    const formData = {
-      name,
-      hp,
-      ac,
-      class: document.getElementById('player-class')?.value?.trim() || 'Adventurer',
-      level: parseInt(document.getElementById('player-level')?.value) || 1,
-      str: parseInt(document.getElementById('player-str')?.value) || 10,
-      dex: parseInt(document.getElementById('player-dex')?.value) || 10,
-      con: parseInt(document.getElementById('player-con')?.value) || 10,
-      int: parseInt(document.getElementById('player-int')?.value) || 10,
-      wis: parseInt(document.getElementById('player-wis')?.value) || 10,
-      cha: parseInt(document.getElementById('player-cha')?.value) || 10,
-      attacks,
-    };
-
-    const charData = createManualCharacter(formData);
-    const token = createCharacterToken(charData);
-    charData.tokenId = token.id;
-
-    const placed = addTokenToGrid(token);
-    if (!placed) {
-      showToast('⚠️ Arena is full!', 'warning');
-      return;
-    }
-
-    renderCharacterList();
-    // Clear form
-    ['player-name', 'player-class'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    ['player-hp', 'player-ac'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    const levelEl = document.getElementById('player-level');
-    if (levelEl) levelEl.value = '1';
-    ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(s => {
-      const el = document.getElementById(`player-${s}`);
-      if (el) el.value = '10';
-    });
-    // Clear attack rows
-    const attackRows = document.getElementById('custom-attack-rows');
-    if (attackRows) attackRows.innerHTML = '';
-
-    showToast(`🧙 ${charData.name} added to arena!`, 'success');
-    switchTab('arena');
   });
 
   // ── Add character from character list to arena ──────────
@@ -921,38 +786,6 @@ function showImportStatus(el, message, type) {
   el.className = `import-status import-status-${type}`;
   el.innerHTML = message;
   el.classList.remove('hidden');
-}
-
-/** Add a new attack row to the custom player form */
-function addCustomAttackRow() {
-  const container = document.getElementById('custom-attack-rows');
-  if (!container) return;
-
-  const row = document.createElement('div');
-  row.className = 'custom-attack-row';
-  row.innerHTML = `
-    <input type="text" class="text-input atk-name" placeholder="Attack name" autocomplete="off">
-    <input type="text" class="text-input atk-bonus" placeholder="+5" style="width:60px">
-    <input type="text" class="text-input atk-damage" placeholder="1d8+3" style="width:80px">
-    <button class="btn btn-sm btn-danger atk-remove" type="button" title="Remove attack">✕</button>
-  `;
-  row.querySelector('.atk-remove')?.addEventListener('click', () => row.remove());
-  container.appendChild(row);
-}
-
-/** Collect attacks from the custom attack rows */
-function collectCustomAttacks() {
-  const rows = document.querySelectorAll('#custom-attack-rows .custom-attack-row');
-  const attacks = [];
-  rows.forEach(row => {
-    const name = row.querySelector('.atk-name')?.value?.trim();
-    const bonusRaw = row.querySelector('.atk-bonus')?.value?.trim() || '0';
-    const damage = row.querySelector('.atk-damage')?.value?.trim() || '1d4';
-    if (!name) return;
-    const hitBonus = parseInt(bonusRaw.replace(/^\+/, '')) || 0;
-    attacks.push({ name, hitBonus, damageDice: [damage], isAoe: false });
-  });
-  return attacks;
 }
 
 /** Double the number of dice in a notation string for critical hits */
