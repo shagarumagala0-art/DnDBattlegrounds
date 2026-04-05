@@ -23,26 +23,29 @@ const SAVE_LABEL_MAP = Object.fromEntries(SAVE_ABILITIES.map(({ key, label }) =>
 const SKILL_CHECK_LABELS = { perception: 'Perception', stealth: 'Stealth', spellcasting: 'Spellcasting' };
 
 /**
- * Load bestiary data from all JSON files listed in data/bestiary-manifest.json.
- * To add a new bestiary, simply add its filename to that manifest — no code
- * changes are required. Files that cannot be fetched are skipped gracefully.
+ * Discover all .json files in the /data/ directory by parsing the server's
+ * HTML directory listing, then load each one as a bestiary.
+ * Any .json file placed in /data/ is automatically included — no manifest or
+ * code changes required.
  */
 export async function loadBestiaries() {
   const allMonsters = [];
 
+  // Fetch the directory listing and extract every .json filename from it.
   let bestiaryFiles = [];
   try {
-    const manifestResponse = await fetch('./data/bestiary-manifest.json');
-    if (!manifestResponse.ok) throw new Error(`HTTP ${manifestResponse.status}`);
-    const parsed = await manifestResponse.json();
-    if (Array.isArray(parsed) && parsed.every(f => typeof f === 'string')) {
-      bestiaryFiles = parsed;
-    } else {
-      throw new Error('Manifest is not an array of strings');
-    }
+    const dirResponse = await fetch('./data/');
+    if (!dirResponse.ok) throw new Error(`HTTP ${dirResponse.status}`);
+    const html = await dirResponse.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    bestiaryFiles = Array.from(doc.querySelectorAll('a[href]'))
+      .map(a => decodeURIComponent(a.getAttribute('href')))
+      .filter(href => href.endsWith('.json') && !href.includes('/'))
+      .map(href => href.split('/').pop());
   } catch (err) {
-    console.warn('Could not load bestiary-manifest.json:', err.message);
-    showToast('⚠️ Could not load bestiary manifest', 'error');
+    console.warn('Could not read data/ directory listing:', err.message);
+    showToast('⚠️ Could not discover bestiary files', 'error');
     return;
   }
 
