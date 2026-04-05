@@ -57,8 +57,10 @@ export function parseMonsterAttacks(monster) {
         toHit: parseInt(hitMatch[1], 10),
         damage: dmgMatch ? dmgMatch[1].trim() : '1d4',
       });
-    } else if (dcMatch && saveMatch) {
-      // Pure saving throw action — no attack roll, defender saves against attacker's DC
+    } else if (dcMatch && saveMatch && dmgMatch) {
+      // Pure saving throw action — no attack roll, defender saves against attacker's DC.
+      // Only included when a {@damage} roll is present; status-effect saves without damage
+      // (fear, charm, paralysis, etc.) are intentionally excluded from the attack panel.
       const saveAbility = ABILITY_NAME_MAP[saveMatch[1].toLowerCase()] || 'str';
       const halfOnSave = /half\s+(as\s+much\s+)?damage/i.test(entryText);
       attacks.push({
@@ -66,7 +68,7 @@ export function parseMonsterAttacks(monster) {
         isSaveAttack: true,
         dc: parseInt(dcMatch[1], 10),
         saveAbility,
-        damage: dmgMatch ? dmgMatch[1].trim() : '1d4',
+        damage: dmgMatch[1].trim(),
         halfOnSave,
       });
     }
