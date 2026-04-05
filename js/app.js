@@ -165,6 +165,11 @@ function setupTokenInfoPanel() {
     }
   });
 
+  document.getElementById('btn-close-panel')?.addEventListener('click', () => {
+    deselectToken();
+    hideTokenInfoPanel();
+  });
+
   document.getElementById('btn-remove-token')?.addEventListener('click', () => {
     if (!state.selectedToken) return;
     const id = state.selectedToken.id;

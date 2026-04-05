@@ -456,6 +456,14 @@ body::before {
 
 #token-info-panel.hidden { display: none; }
 
+.token-info-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
 .token-info-header {
   display: flex;
   align-items: center;
