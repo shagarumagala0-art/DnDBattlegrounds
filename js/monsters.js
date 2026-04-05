@@ -363,7 +363,7 @@ function getMonsterSaveBonus(monster, ability) {
  * @param {Object} monster
  * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[]}>}
  */
-function parseMonsterAttacks(monster) {
+export function parseMonsterAttacks(monster) {
   const attacks = [];
   if (!monster.action) return attacks;
 
@@ -405,7 +405,7 @@ function parseMonsterAttacks(monster) {
  * @param {string} name
  * @returns {string}
  */
-function cleanActionName(name) {
+export function cleanActionName(name) {
   return name
     .replace(/\{@recharge\s+(\d+)\}/g, (_, n) => ` (Recharge ${n}–6)`)
     .replace(/\{@[^}]+\}/g, '')
