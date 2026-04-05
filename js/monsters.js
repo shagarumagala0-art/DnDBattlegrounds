@@ -246,6 +246,51 @@ export function showStatblock(monster) {
     });
   });
 
+  // Wire up attack roll buttons
+  const attackResultEl = bodyEl.querySelector('.sb-attack-result');
+  bodyEl.querySelectorAll('.sb-atk-roll-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bonus = parseInt(btn.dataset.bonus, 10);
+      const d20 = Math.floor(Math.random() * 20) + 1;
+      const total = d20 + bonus;
+      const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+      const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Attack';
+      if (attackResultEl) {
+        const boldName = document.createElement('strong');
+        boldName.textContent = name;
+        const boldTotal = document.createElement('strong');
+        boldTotal.textContent = String(total);
+        attackResultEl.replaceChildren(
+          `⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal
+        );
+      }
+    });
+  });
+
+  // Wire up damage roll buttons
+  bodyEl.querySelectorAll('.sb-dmg-roll-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const damageParts = btn.dataset.damage.split('|');
+      let totalDmg = 0;
+      const rolls = [];
+      damageParts.forEach(dice => {
+        const result = rollDice(dice);
+        totalDmg += result;
+        rolls.push(`${dice}(${result})`);
+      });
+      const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
+      if (attackResultEl) {
+        const boldName = document.createElement('strong');
+        boldName.textContent = name;
+        const boldTotal = document.createElement('strong');
+        boldTotal.textContent = String(totalDmg);
+        attackResultEl.replaceChildren(
+          `💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal
+        );
+      }
+    });
+  });
+
   state.pendingMonster = monster;
 
   if (addBtn) {
@@ -307,6 +352,63 @@ function getMonsterSaveBonus(monster, ability) {
     console.warn(`[statblock] Could not parse save bonus for ${ability}: "${monster.save[ability]}"; using ability modifier instead.`);
   }
   return getModifier(monster[ability] || 10);
+}
+
+/**
+ * Extract attack information from a monster's action list.
+ * Actions with {@hit N} get an attack roll + damage roll.
+ * Actions with {@damage} but no {@hit} (AOE / save-based) get damage roll only.
+ *
+ * @param {Object} monster
+ * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[]}>}
+ */
+function parseMonsterAttacks(monster) {
+  const attacks = [];
+  if (!monster.action) return attacks;
+
+  for (const action of monster.action) {
+    const entries = action.entries || [];
+    const fullText = entries.filter(e => typeof e === 'string').join(' ');
+    if (!fullText) continue;
+
+    const hitMatch = fullText.match(/\{@hit\s+(-?\d+)\}/);
+    const damageMatches = [...fullText.matchAll(/\{@damage\s+([^}]+)\}/g)];
+
+    if (damageMatches.length === 0) continue;
+
+    const damageDice = damageMatches.map(m => m[1].trim().replace(/\s/g, ''));
+
+    if (hitMatch) {
+      attacks.push({
+        name: action.name,
+        isAoe: false,
+        hitBonus: parseInt(hitMatch[1], 10),
+        damageDice,
+      });
+    } else {
+      attacks.push({
+        name: action.name,
+        isAoe: true,
+        hitBonus: null,
+        damageDice,
+      });
+    }
+  }
+
+  return attacks;
+}
+
+/**
+ * Strip 5etools inline tags from an action name for plain-text display.
+ * e.g. "Singularity Breath {@recharge 5}" → "Singularity Breath (Recharge 5–6)"
+ * @param {string} name
+ * @returns {string}
+ */
+function cleanActionName(name) {
+  return name
+    .replace(/\{@recharge\s+(\d+)\}/g, (_, n) => ` (Recharge ${n}–6)`)
+    .replace(/\{@[^}]+\}/g, '')
+    .trim();
 }
 
 /**
@@ -422,8 +524,44 @@ export function parseStatblock(monster) {
         </div>
         <div class="sb-save-result sb-skill-result"></div>
       </div>
-      <div class="sb-divider"></div>
-      <div class="sb-secondary">`;
+      <div class="sb-divider"></div>`;
+
+  // Attacks section (below saves / skill checks)
+  const attacks = parseMonsterAttacks(monster);
+  if (attacks.length > 0) {
+    html += `<div class="sb-attacks">
+        <div class="sb-saves-title">⚔️ Attacks <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-attack-list">`;
+
+    attacks.forEach(atk => {
+      const displayName = cleanActionName(atk.name);
+      html += `<div class="sb-attack-row">
+          <span class="sb-attack-name" title="${displayName}">${displayName}</span>
+          <div class="sb-attack-btns">`;
+
+      if (!atk.isAoe) {
+        const bonusStr = formatModifier(atk.hitBonus);
+        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${displayName}: to hit">
+              <span class="sb-atk-label">ATK</span>
+              <span class="sb-atk-val">${bonusStr}</span>
+            </button>`;
+      }
+
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" title="${displayName}: damage">
+            <span class="sb-atk-label">DMG</span>
+            <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
+          </button>`;
+
+      html += `</div></div>`;
+    });
+
+    html += `</div>
+        <div class="sb-save-result sb-attack-result"></div>
+      </div>
+      <div class="sb-divider"></div>`;
+  }
+
+  html += `<div class="sb-secondary">`;
 
   // Skills
   if (monster.skill && Object.keys(monster.skill).length > 0) {
