@@ -1415,6 +1415,86 @@ body::before {
   padding: 5px 8px;
 }
 
+/* ── Statblock Attacks ───────────────────────────────────── */
+.sb-attacks {
+  padding: 6px 0;
+}
+
+.sb-attack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sb-attack-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.sb-attack-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-attack-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sb-atk-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  font-family: inherit;
+  color: inherit;
+  min-width: 46px;
+}
+
+.sb-atk-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--gold-dark);
+}
+
+.sb-atk-btn:active {
+  background: var(--crimson-dark);
+  border-color: var(--crimson);
+}
+
+.sb-atk-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gold-muted);
+}
+
+.sb-dmg-roll-btn .sb-atk-label {
+  color: var(--crimson);
+}
+
+.sb-atk-val {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
 /* Modal sheet */
 .modal-sheet .modal-body {
   padding: 16px 20px;
