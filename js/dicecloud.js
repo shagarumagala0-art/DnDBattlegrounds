@@ -146,10 +146,8 @@ export function createCharacterToken(charData) {
     wis: charData.wis || 10,
     cha: charData.cha || 10,
     dexMod: getModifier(charData.dex || 10),
-    initiative: null,
     color: 'player',
     monsterData: null,
-    attacks: charData.attacks || [],
     characterData: charData,
   };
 }
@@ -160,18 +158,6 @@ export function createCharacterToken(charData) {
  * @returns {Object}
  */
 export function createManualCharacter(formData) {
-  // Build attacks array from to-hit / damage fields
-  const attacks = [];
-  const toHit = (formData.toHit || '').toString().trim();
-  const damage = (formData.damage || '').toString().trim();
-  if (toHit || damage) {
-    attacks.push({
-      name: 'Attack',
-      toHit: toHit || '0',
-      damage: damage || '1d4',
-    });
-  }
-
   const charData = {
     id: generateId(),
     name: formData.name || 'Player',
@@ -184,7 +170,6 @@ export function createManualCharacter(formData) {
     int: parseInt(formData.int) || 10,
     wis: parseInt(formData.wis) || 10,
     cha: parseInt(formData.cha) || 10,
-    attacks,
     manual: true,
   };
 
