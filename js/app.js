@@ -10,7 +10,7 @@ import {
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
 import { parseGSheetJSON } from './import.js';
-import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice } from './utils.js';
+import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice, formatSpeed } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -178,6 +178,48 @@ function setupTokenInfoPanel() {
     showToast('🗑️ Token removed', 'info');
   });
 
+  document.getElementById('btn-roll-initiative')?.addEventListener('click', () => {
+    if (!state.selectedToken) return;
+    const token = state.selectedToken;
+    const dexMod = getModifier(token.dex || 10);
+    const d20 = Math.floor(Math.random() * 20) + 1;
+    const total = d20 + dexMod;
+    token.initiative = total;
+    const el = document.getElementById('info-initiative');
+    if (el) el.textContent = total;
+    const input = document.getElementById('initiative-input');
+    if (input) input.value = '';
+    const modStr = dexMod >= 0 ? `+${dexMod}` : `${dexMod}`;
+    showToast(`⚡ Initiative: d20(${d20})${modStr} = ${total}`, 'info', 2000);
+  });
+
+  document.getElementById('btn-set-initiative')?.addEventListener('click', () => {
+    if (!state.selectedToken) return;
+    const input = document.getElementById('initiative-input');
+    const val = parseInt(input?.value, 10);
+    if (isNaN(val)) return;
+    state.selectedToken.initiative = val;
+    const el = document.getElementById('info-initiative');
+    if (el) el.textContent = val;
+    if (input) input.value = '';
+  });
+
+  document.getElementById('conditions-grid')?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.condition-chip');
+    if (!chip || !state.selectedToken) return;
+    const condition = chip.dataset.condition;
+    const token = state.selectedToken;
+    if (!Array.isArray(token.conditions)) token.conditions = [];
+    const idx = token.conditions.indexOf(condition);
+    if (idx === -1) {
+      token.conditions.push(condition);
+      chip.classList.add('active');
+    } else {
+      token.conditions.splice(idx, 1);
+      chip.classList.remove('active');
+    }
+  });
+
   // Roll buttons: single handler for all .token-roll-btn elements
   const rollResultEl = document.getElementById('token-roll-result');
   document.querySelectorAll('.token-roll-btn').forEach(btn => {
@@ -289,6 +331,29 @@ export function updateTokenInfoPanel(token) {
   document.getElementById('info-hp').textContent = `${token.hp}/${token.maxHp}`;
   document.getElementById('info-ac').textContent = token.ac;
   document.getElementById('info-position').textContent = `(${token.col + 1}, ${token.row + 1})`;
+
+  // Speed
+  const speedEl = document.getElementById('info-speed');
+  if (speedEl) {
+    if (token.monsterData?.speed) {
+      const full = formatSpeed(token.monsterData.speed);
+      speedEl.textContent = full.split(',')[0];
+      speedEl.title = full;
+    } else if (token.characterData?.speed) {
+      speedEl.textContent = typeof token.characterData.speed === 'number'
+        ? `${token.characterData.speed} ft.`
+        : token.characterData.speed;
+    } else {
+      speedEl.textContent = '30 ft.';
+    }
+  }
+
+  // Initiative
+  const initiativeEl = document.getElementById('info-initiative');
+  if (initiativeEl) {
+    initiativeEl.textContent = token.initiative !== null && token.initiative !== undefined
+      ? token.initiative : '—';
+  }
 
   const hpBar = document.getElementById('info-hp-bar');
   if (hpBar) {
@@ -431,6 +496,45 @@ export function updateTokenInfoPanel(token) {
       attackSection.classList.remove('hidden');
     } else {
       attackSection.classList.add('hidden');
+    }
+  }
+
+  // Render condition chips
+  const condGrid = document.getElementById('conditions-grid');
+  if (condGrid) {
+    renderConditionChips(condGrid, token);
+  }
+
+  // Render resistances/immunities (monsters only)
+  const resistSection = document.getElementById('token-resistances');
+  const resistContent = document.getElementById('token-resistances-content');
+  if (resistSection && resistContent) {
+    const m = token.monsterData;
+    if (m) {
+      const lines = [];
+      if (m.vulnerable?.length) {
+        const vals = m.vulnerable.map(v => (typeof v === 'object' ? (v.resist || v.vulnerable || []).join(', ') : v)).join('; ');
+        lines.push(`<span class="res-line res-vuln"><strong>VULN:</strong> ${vals}</span>`);
+      }
+      if (m.resist?.length) {
+        const vals = m.resist.map(r => (typeof r === 'object' ? (r.resist || []).join(', ') : r)).join('; ');
+        lines.push(`<span class="res-line res-resist"><strong>RESIST:</strong> ${vals}</span>`);
+      }
+      if (m.immune?.length) {
+        const vals = m.immune.map(r => (typeof r === 'object' ? (r.immune || []).join(', ') : r)).join('; ');
+        lines.push(`<span class="res-line res-immune"><strong>IMMUNE:</strong> ${vals}</span>`);
+      }
+      if (m.conditionImmune?.length) {
+        lines.push(`<span class="res-line res-immune"><strong>COND IMMUNE:</strong> ${m.conditionImmune.join(', ')}</span>`);
+      }
+      if (lines.length > 0) {
+        resistContent.innerHTML = lines.join('');
+        resistSection.classList.remove('hidden');
+      } else {
+        resistSection.classList.add('hidden');
+      }
+    } else {
+      resistSection.classList.add('hidden');
     }
   }
 
@@ -791,6 +895,33 @@ function showImportStatus(el, message, type) {
   el.className = `import-status import-status-${type}`;
   el.innerHTML = message;
   el.classList.remove('hidden');
+}
+
+/** All standard D&D 5e conditions */
+const CONDITIONS = [
+  'Blinded', 'Charmed', 'Deafened', 'Exhausted', 'Frightened', 'Grappled',
+  'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned',
+  'Prone', 'Restrained', 'Stunned', 'Unconscious',
+];
+
+/**
+ * Render condition toggle chips into a container element.
+ * @param {HTMLElement} container
+ * @param {Object} token
+ */
+function renderConditionChips(container, token) {
+  container.replaceChildren();
+  const active = Array.isArray(token.conditions) ? token.conditions : [];
+  CONDITIONS.forEach(condition => {
+    const chip = document.createElement('button');
+    const key = condition.toLowerCase();
+    chip.className = 'condition-chip' + (active.includes(key) ? ' active' : '');
+    chip.textContent = condition;
+    chip.dataset.condition = key;
+    chip.title = condition;
+    chip.type = 'button';
+    container.appendChild(chip);
+  });
 }
 
 /** Double the number of dice in a notation string for critical hits */
