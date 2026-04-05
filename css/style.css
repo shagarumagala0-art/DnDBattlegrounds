@@ -58,7 +58,7 @@
 
   --tab-height:     56px;
   --header-height:  52px;
-  --info-panel-h:   130px;
+  --info-panel-h:   240px;
   --toolbar-h:      52px;
 }
 
@@ -568,6 +568,98 @@ body::before {
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease, background 0.3s ease;
+}
+
+/* ── Token Info Roll Section ─────────────────────────────── */
+.token-rolls {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+}
+
+.token-rolls-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.token-rolls-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+}
+
+.token-rolls-btns {
+  display: grid;
+  gap: 3px;
+}
+
+.token-skill-btns {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.token-save-btns {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.token-roll-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 4px 2px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  font-family: inherit;
+  color: inherit;
+}
+
+.token-roll-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--gold-dark);
+}
+
+.token-roll-btn:active {
+  background: var(--crimson-dark);
+  border-color: var(--crimson);
+}
+
+.token-roll-name {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gold-muted);
+  line-height: 1;
+}
+
+.token-roll-mod {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.token-roll-result {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: center;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  transition: padding var(--transition);
+  overflow: hidden;
+}
+
+.token-roll-result:not(:empty) {
+  padding: 4px 8px;
 }
 
 /* ── Buttons ──────────────────────────────────────────────── */
@@ -1510,6 +1602,12 @@ body::before {
 .sb-saves-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.sb-skill-checks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
 }
 

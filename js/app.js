@@ -9,7 +9,7 @@ import {
 } from './grid.js';
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken } from './monsters.js';
 import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList } from './dicecloud.js';
-import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId } from './utils.js';
+import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -149,6 +149,25 @@ function setupTokenInfoPanel() {
     hideTokenInfoPanel();
     showToast('🗑️ Token removed', 'info');
   });
+
+  // Roll buttons: single handler for all .token-roll-btn elements
+  const rollResultEl = document.getElementById('token-roll-result');
+  document.querySelectorAll('.token-roll-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mod = parseInt(btn.dataset.mod, 10) || 0;
+      const label = btn.dataset.label || 'Check';
+      const d20 = Math.floor(Math.random() * 20) + 1;
+      const total = d20 + mod;
+      const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+      if (rollResultEl) {
+        const boldLabel = document.createElement('strong');
+        boldLabel.textContent = label;
+        const boldTotal = document.createElement('strong');
+        boldTotal.textContent = String(total);
+        rollResultEl.replaceChildren(`🎲 `, boldLabel, `: d20(${d20})${modStr} = `, boldTotal);
+      }
+    });
+  });
 }
 
 export function updateTokenInfoPanel(token) {
@@ -173,6 +192,57 @@ export function updateTokenInfoPanel(token) {
   if (badge) {
     badge.className = `token-badge token-badge-${token.type}`;
   }
+
+  // Compute ability modifiers for roll buttons
+  const strMod = getModifier(token.str || 10);
+  const dexMod = getModifier(token.dex || 10);
+  const conMod = getModifier(token.con || 10);
+  const intMod = getModifier(token.int || 10);
+  const wisMod = getModifier(token.wis || 10);
+  const chaMod = getModifier(token.cha || 10);
+
+  // Skill checks: use monster proficiency bonus if available, else raw ability modifier
+  const monsterData = token.monsterData;
+  const perceptionParsed = monsterData ? parseInt(monsterData.skill?.perception, 10) : NaN;
+  const perceptionMod = !isNaN(perceptionParsed) ? perceptionParsed : wisMod;
+  const stealthParsed = monsterData ? parseInt(monsterData.skill?.stealth, 10) : NaN;
+  const stealthMod = !isNaN(stealthParsed) ? stealthParsed : dexMod;
+  const { mod: spellcastingMod, ability: spellcastingAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
+
+  // Saving throw: use monster save proficiency if available, else raw ability modifier
+  const getSaveMod = (ability, fallback) => {
+    if (monsterData?.save?.[ability] !== undefined) {
+      const parsed = parseInt(monsterData.save[ability], 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return fallback;
+  };
+
+  const rollBtnData = [
+    { id: 'roll-perception',  mod: perceptionMod,          label: 'Perception',   title: 'Perception check (WIS)' },
+    { id: 'roll-stealth',     mod: stealthMod,             label: 'Stealth',      title: 'Stealth check (DEX)' },
+    { id: 'roll-spellcasting',mod: spellcastingMod,        label: 'Spellcasting', title: `Spellcasting check (${spellcastingAbility})` },
+    { id: 'roll-save-str',    mod: getSaveMod('str', strMod), label: 'STR Save', title: 'STR saving throw' },
+    { id: 'roll-save-dex',    mod: getSaveMod('dex', dexMod), label: 'DEX Save', title: 'DEX saving throw' },
+    { id: 'roll-save-con',    mod: getSaveMod('con', conMod), label: 'CON Save', title: 'CON saving throw' },
+    { id: 'roll-save-int',    mod: getSaveMod('int', intMod), label: 'INT Save', title: 'INT saving throw' },
+    { id: 'roll-save-wis',    mod: getSaveMod('wis', wisMod), label: 'WIS Save', title: 'WIS saving throw' },
+    { id: 'roll-save-cha',    mod: getSaveMod('cha', chaMod), label: 'CHA Save', title: 'CHA saving throw' },
+  ];
+
+  for (const { id, mod, label, title } of rollBtnData) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.dataset.mod = mod;
+    btn.dataset.label = label;
+    btn.title = title;
+    const modEl = btn.querySelector('.token-roll-mod');
+    if (modEl) modEl.textContent = formatModifier(mod);
+  }
+
+  // Clear previous roll result when switching tokens
+  const rollResult = document.getElementById('token-roll-result');
+  if (rollResult) rollResult.replaceChildren();
 
   panel.classList.remove('hidden');
 }
