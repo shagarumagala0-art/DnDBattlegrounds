@@ -7,9 +7,9 @@ import {
   initGrid, addTokenToGrid, removeTokenFromGrid, renderTokens,
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect
 } from './grid.js';
-import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken } from './monsters.js';
+import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
 import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList } from './dicecloud.js';
-import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier } from './utils.js';
+import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -189,6 +189,51 @@ function setupTokenInfoPanel() {
       }
     });
   });
+
+  // Attack roll and damage roll buttons (event delegation on the dynamic attack list)
+  const attackListEl = document.getElementById('token-attack-list');
+  if (attackListEl) {
+    attackListEl.addEventListener('click', (e) => {
+      const atkBtn = e.target.closest('.sb-atk-roll-btn');
+      if (atkBtn) {
+        const bonus = parseInt(atkBtn.dataset.bonus, 10);
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const total = d20 + bonus;
+        const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+        const name = atkBtn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Attack';
+        const resultEl = atkBtn.closest('.sb-attack-row')?.querySelector('.sb-row-atk-result');
+        if (resultEl) {
+          const boldName = document.createElement('strong');
+          boldName.textContent = name;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(total);
+          resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal);
+        }
+        return;
+      }
+
+      const dmgBtn = e.target.closest('.sb-dmg-roll-btn');
+      if (dmgBtn) {
+        const damageParts = dmgBtn.dataset.damage.split('|');
+        let totalDmg = 0;
+        const rolls = [];
+        damageParts.forEach(dice => {
+          const result = rollDice(dice);
+          totalDmg += result;
+          rolls.push(`${dice}(${result})`);
+        });
+        const name = dmgBtn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
+        const resultEl = dmgBtn.closest('.sb-attack-row')?.querySelector('.sb-row-dmg-result');
+        if (resultEl) {
+          const boldName = document.createElement('strong');
+          boldName.textContent = name;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(totalDmg);
+          resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+        }
+      }
+    });
+  }
 }
 
 export function updateTokenInfoPanel(token) {
@@ -264,6 +309,82 @@ export function updateTokenInfoPanel(token) {
   // Clear previous roll result when switching tokens
   const rollResult = document.getElementById('token-roll-result');
   if (rollResult) rollResult.replaceChildren();
+
+  // Render attacks section (monsters only)
+  const attackSection = document.getElementById('token-attacks-section');
+  const attackListEl = document.getElementById('token-attack-list');
+  if (attackSection && attackListEl) {
+    attackListEl.replaceChildren();
+    const attacks = token.monsterData ? parseMonsterAttacks(token.monsterData) : [];
+    if (attacks.length > 0) {
+      attacks.forEach(atk => {
+        const displayName = cleanActionName(atk.name);
+
+        const row = document.createElement('div');
+        row.className = 'sb-attack-row';
+
+        const header = document.createElement('div');
+        header.className = 'sb-attack-row-header';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'sb-attack-name';
+        nameSpan.title = displayName;
+        nameSpan.textContent = displayName;
+
+        const btnsDiv = document.createElement('div');
+        btnsDiv.className = 'sb-attack-btns';
+
+        if (!atk.isAoe) {
+          const atkBtn = document.createElement('button');
+          atkBtn.className = 'sb-atk-btn sb-atk-roll-btn';
+          atkBtn.dataset.bonus = atk.hitBonus;
+          atkBtn.title = `${displayName}: to hit`;
+          const atkLabel = document.createElement('span');
+          atkLabel.className = 'sb-atk-label';
+          atkLabel.textContent = 'ATK';
+          const atkVal = document.createElement('span');
+          atkVal.className = 'sb-atk-val';
+          atkVal.textContent = formatModifier(atk.hitBonus);
+          atkBtn.append(atkLabel, atkVal);
+          btnsDiv.appendChild(atkBtn);
+        }
+
+        const dmgBtn = document.createElement('button');
+        dmgBtn.className = 'sb-atk-btn sb-dmg-roll-btn';
+        dmgBtn.dataset.damage = atk.damageDice.join('|');
+        dmgBtn.title = `${displayName}: damage`;
+        const dmgLabel = document.createElement('span');
+        dmgLabel.className = 'sb-atk-label';
+        dmgLabel.textContent = 'DMG';
+        const dmgVal = document.createElement('span');
+        dmgVal.className = 'sb-atk-val';
+        dmgVal.textContent = atk.damageDice[0] || '—';
+        dmgBtn.append(dmgLabel, dmgVal);
+        btnsDiv.appendChild(dmgBtn);
+
+        header.append(nameSpan, btnsDiv);
+
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'sb-attack-row-results';
+
+        if (!atk.isAoe) {
+          const atkResult = document.createElement('div');
+          atkResult.className = 'sb-row-atk-result';
+          resultsDiv.appendChild(atkResult);
+        }
+
+        const dmgResult = document.createElement('div');
+        dmgResult.className = 'sb-row-dmg-result';
+        resultsDiv.appendChild(dmgResult);
+
+        row.append(header, resultsDiv);
+        attackListEl.appendChild(row);
+      });
+      attackSection.classList.remove('hidden');
+    } else {
+      attackSection.classList.add('hidden');
+    }
+  }
 
   panel.classList.remove('hidden');
 }
