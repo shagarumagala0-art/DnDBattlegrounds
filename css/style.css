@@ -541,10 +541,32 @@ body::before {
   color: var(--text-primary);
 }
 
+.hp-display-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
 .hp-control {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+
+.hp-input {
+  width: 56px;
+  padding: 2px 4px;
+  font-size: 13px;
+  background: var(--bg-tertiary, #1e1e2e);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.hp-input::-webkit-inner-spin-button,
+.hp-input::-webkit-outer-spin-button {
+  opacity: 1;
 }
 
 .hp-display {

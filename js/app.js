@@ -2,7 +2,7 @@
  * DnD Arena Pro — Main Application Module
  */
 
-import { state, changeTokenHp, findToken } from './state.js';
+import { state, changeTokenHp, setTokenHp, findToken } from './state.js';
 import {
   initGrid, addTokenToGrid, removeTokenFromGrid, renderTokens,
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect
@@ -124,18 +124,39 @@ function setupArenaToolbar() {
 // ─── Token Info Panel ─────────────────────────────────────────────────────────
 
 function setupTokenInfoPanel() {
-  document.getElementById('btn-hp-minus')?.addEventListener('click', () => {
+  const hpAmountEl = document.getElementById('hp-amount');
+  const parseHpAmount = () => {
+    const val = parseInt(hpAmountEl?.value, 10);
+    return isNaN(val) ? null : val;
+  };
+
+  document.getElementById('btn-hp-set')?.addEventListener('click', () => {
     if (!state.selectedToken) return;
-    const token = changeTokenHp(state.selectedToken.id, -1);
+    const amt = parseHpAmount();
+    if (amt === null) return;
+    const token = setTokenHp(state.selectedToken.id, amt);
     if (token) {
       updateTokenInfoPanel(token);
       renderTokens();
     }
   });
 
-  document.getElementById('btn-hp-plus')?.addEventListener('click', () => {
+  document.getElementById('btn-hp-add')?.addEventListener('click', () => {
     if (!state.selectedToken) return;
-    const token = changeTokenHp(state.selectedToken.id, 1);
+    const amt = parseHpAmount();
+    if (amt === null) return;
+    const token = changeTokenHp(state.selectedToken.id, amt);
+    if (token) {
+      updateTokenInfoPanel(token);
+      renderTokens();
+    }
+  });
+
+  document.getElementById('btn-hp-sub')?.addEventListener('click', () => {
+    if (!state.selectedToken) return;
+    const amt = parseHpAmount();
+    if (amt === null) return;
+    const token = changeTokenHp(state.selectedToken.id, -amt);
     if (token) {
       updateTokenInfoPanel(token);
       renderTokens();

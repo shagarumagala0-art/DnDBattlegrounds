@@ -82,3 +82,15 @@ export function changeTokenHp(id, delta) {
   token.hp = Math.max(0, Math.min(token.maxHp, token.hp + delta));
   return token;
 }
+
+/**
+ * @param {string} id
+ * @param {number} value
+ * @returns {TokenData|null}
+ */
+export function setTokenHp(id, value) {
+  const token = findToken(id);
+  if (!token) return null;
+  token.hp = Math.max(0, Math.min(token.maxHp, value));
+  return token;
+}
