@@ -5,6 +5,19 @@ import {
   rollDice, showToast, formatSpeed, formatAlignment, formatSize
 } from './utils.js';
 
+/** All six D&D saving throw abilities, ordered for display. */
+const SAVE_ABILITIES = [
+  { key: 'str', label: 'STR' },
+  { key: 'dex', label: 'DEX' },
+  { key: 'con', label: 'CON' },
+  { key: 'int', label: 'INT' },
+  { key: 'wis', label: 'WIS' },
+  { key: 'cha', label: 'CHA' },
+];
+
+/** Maps ability keys to their display labels. */
+const SAVE_LABEL_MAP = Object.fromEntries(SAVE_ABILITIES.map(({ key, label }) => [key, label]));
+
 /**
  * List of bestiary JSON files to load from the /data/ directory.
  * Add filenames here to include additional bestiaries — all monsters are merged.
@@ -184,6 +197,29 @@ export function showStatblock(monster) {
   nameEl.textContent = monster.name;
   bodyEl.innerHTML = parseStatblock(monster);
 
+  // Wire up saving throw roll buttons
+  const saveResultEl = bodyEl.querySelector('.sb-save-result');
+  bodyEl.querySelectorAll('.sb-save-roll').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ability = btn.dataset.ability;
+      const mod = parseInt(btn.dataset.mod, 10);
+      const d20 = Math.floor(Math.random() * 20) + 1;
+      const total = d20 + mod;
+      const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+      const label = SAVE_LABEL_MAP[ability];
+      if (saveResultEl && label) {
+        // Build result using DOM manipulation to avoid innerHTML with interpolated values
+        const boldLabel = document.createElement('strong');
+        boldLabel.textContent = label;
+        const boldTotal = document.createElement('strong');
+        boldTotal.textContent = String(total);
+        saveResultEl.replaceChildren(
+          `🎲 `, boldLabel, ` Save: d20(${d20})${modStr} = `, boldTotal
+        );
+      }
+    });
+  });
+
   state.pendingMonster = monster;
 
   if (addBtn) {
@@ -227,6 +263,24 @@ export function openAddToArenaModal(monster) {
 
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Get a monster's saving throw bonus for an ability.
+ * Prefers the explicit save modifier from monster.save when available,
+ * otherwise falls back to the raw ability modifier.
+ *
+ * @param {Object} monster
+ * @param {string} ability - 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+ * @returns {number}
+ */
+function getMonsterSaveBonus(monster, ability) {
+  if (monster.save && monster.save[ability] !== undefined && monster.save[ability] !== null) {
+    const parsed = parseInt(monster.save[ability], 10);
+    if (!isNaN(parsed)) return parsed;
+    console.warn(`[statblock] Could not parse save bonus for ${ability}: "${monster.save[ability]}"; using ability modifier instead.`);
+  }
+  return getModifier(monster[ability] || 10);
 }
 
 /**
@@ -298,17 +352,25 @@ export function parseStatblock(monster) {
         </div>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-secondary">`;
+      <div class="sb-saves">
+        <div class="sb-saves-title">🎲 Saving Throws <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-saves-grid">`;
 
-  // Saving throws
-  if (monster.save && Object.keys(monster.save).length > 0) {
-    const saves = Object.entries(monster.save).map(([k, v]) => {
-      const val = String(v);
-      const signed = (val.startsWith('+') || val.startsWith('-')) ? val : `+${val}`;
-      return `${k.toUpperCase()} ${signed}`;
-    }).join(', ');
-    html += `<p><strong>Saving Throws</strong> ${saves}</p>`;
+  for (const { key, label } of SAVE_ABILITIES) {
+    const bonus = getMonsterSaveBonus(monster, key);
+    const bonusStr = formatModifier(bonus);
+    const hasProficiency = monster.save && monster.save[key] !== undefined;
+    html += `<button class="sb-save-roll${hasProficiency ? ' sb-save-proficient' : ''}" data-ability="${key}" data-mod="${bonus}" title="${label} saving throw: ${bonusStr}">
+        <span class="sb-save-name">${label}</span>
+        <span class="sb-save-mod">${bonusStr}</span>
+      </button>`;
   }
+
+  html += `</div>
+        <div class="sb-save-result"></div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-secondary">`;
 
   // Skills
   if (monster.skill && Object.keys(monster.skill).length > 0) {
