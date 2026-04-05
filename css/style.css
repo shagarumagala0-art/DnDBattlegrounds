@@ -1654,3 +1654,178 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   opacity: 0.4;
 }
+
+/* ── Import Source Tabs ──────────────────────────────────── */
+.import-source-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.import-source-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.import-source-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.import-source-btn.active {
+  background: var(--bg-panel);
+  color: var(--gold);
+  border: 1px solid var(--border-bright);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.import-source-panel {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-card);
+}
+
+.import-source-panel.active {
+  display: flex;
+}
+
+/* ── File Upload Input ───────────────────────────────────── */
+.file-upload-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.file-upload-label:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-hover);
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── G-sheet help and textarea ───────────────────────────── */
+.gsheet-help-link {
+  color: var(--text-link);
+  text-decoration: none;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.gsheet-help {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.code-block {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+  font-family: 'Courier New', Courier, monospace;
+  margin: 6px 0;
+}
+
+.gsheet-textarea {
+  min-height: 72px;
+  resize: vertical;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* ── Custom attacks section ──────────────────────────────── */
+.custom-attacks-section {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: var(--bg-surface);
+}
+
+.custom-attacks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.custom-attack-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.custom-attack-row .text-input {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.custom-attack-row .atk-name {
+  flex: 1;
+}
+
+/* ── Character source icon ───────────────────────────────── */
+.char-source-icon {
+  font-size: 11px;
+  opacity: 0.7;
+  vertical-align: middle;
+}
+
+/* ── Character sheet overlay (same base as statblock) ────── */
+.sb-source {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 2px;
+}

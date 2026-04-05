@@ -8,7 +8,8 @@ import {
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect
 } from './grid.js';
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
-import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList } from './dicecloud.js';
+import { importCharacter, createCharacterToken, createManualCharacter, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
+import { parseDnDBeyondJSON, parseGSheetJSON, readJSONFile } from './import.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupCharactersTab();
   setupOverlays();
   setupTokenInfoPanel();
+  setupCharacterSheetOverlay();
 
   // Load monster data
   await loadBestiaries();
@@ -203,14 +205,6 @@ function setupTokenInfoPanel() {
     }, 2000);
   }
 
-  // Double the number of dice in a notation string (e.g. "1d6+4" → "2d6+4")
-  function doubleDiceNotation(notation) {
-    const str = String(notation).trim().toLowerCase().replace(/\s/g, '');
-    const match = str.match(/^(\d+)d(\d+)([+-]\d+)?$/);
-    if (!match) return notation;
-    return `${parseInt(match[1]) * 2}d${match[2]}${match[3] || ''}`;
-  }
-
   // Attack roll and damage roll buttons (event delegation on the dynamic attack list)
   const attackListEl = document.getElementById('token-attack-list');
   if (attackListEl) {
@@ -354,12 +348,17 @@ export function updateTokenInfoPanel(token) {
   const rollResult = document.getElementById('token-roll-result');
   if (rollResult) rollResult.replaceChildren();
 
-  // Render attacks section (monsters only)
+  // Render attacks section (monsters and characters with defined attacks)
   const attackSection = document.getElementById('token-attacks-section');
   const attackListEl = document.getElementById('token-attack-list');
   if (attackSection && attackListEl) {
     attackListEl.replaceChildren();
-    const attacks = token.monsterData ? parseMonsterAttacks(token.monsterData) : [];
+    let attacks = [];
+    if (token.monsterData) {
+      attacks = parseMonsterAttacks(token.monsterData);
+    } else if (token.characterData) {
+      attacks = getCharacterAttacks(token.characterData);
+    }
     if (attacks.length > 0) {
       attacks.forEach(atk => {
         const displayName = cleanActionName(atk.name);
@@ -462,7 +461,18 @@ function setupMonsterTab() {
 // ─── Characters Tab ───────────────────────────────────────────────────────────
 
 function setupCharactersTab() {
-  // DiceCloud import
+  // ── Import source tab switching ─────────────────────────
+  document.querySelectorAll('.import-source-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const source = btn.dataset.source;
+      document.querySelectorAll('.import-source-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.import-source-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`import-panel-${source}`)?.classList.add('active');
+    });
+  });
+
+  // ── DiceCloud import ────────────────────────────────────
   document.getElementById('btn-import-character')?.addEventListener('click', async () => {
     const url = document.getElementById('dicecloud-url')?.value || '';
     const charData = await importCharacter(url);
@@ -472,7 +482,103 @@ function setupCharactersTab() {
     }
   });
 
-  // Custom player form
+  // ── D&D Beyond file import ──────────────────────────────
+  const ddbFileInput = document.getElementById('dndbeyond-file');
+  ddbFileInput?.addEventListener('change', () => {
+    const name = ddbFileInput.files?.[0]?.name || 'Choose JSON file…';
+    const el = document.getElementById('dndbeyond-file-name');
+    if (el) el.textContent = name;
+  });
+
+  document.getElementById('btn-import-dndbeyond')?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('dndbeyond-status');
+    const file = ddbFileInput?.files?.[0];
+    if (!file) {
+      showImportStatus(statusEl, '⚠️ Please choose a JSON file first.', 'error');
+      return;
+    }
+    showImportStatus(statusEl, '⏳ Reading file…', 'loading');
+    try {
+      const raw = await readJSONFile(file);
+      const charData = parseDnDBeyondJSON(raw);
+      state.characters.push(charData);
+      renderCharacterList();
+      showImportStatus(statusEl, `✅ Imported ${charData.name} from D&D Beyond!`, 'success');
+      if (ddbFileInput) ddbFileInput.value = '';
+      const nameEl = document.getElementById('dndbeyond-file-name');
+      if (nameEl) nameEl.textContent = 'Choose JSON file…';
+    } catch (err) {
+      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
+    }
+  });
+
+  // ── G-sheet help toggle ─────────────────────────────────
+  document.getElementById('gsheet-help-toggle')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const help = document.getElementById('gsheet-help');
+    const toggle = document.getElementById('gsheet-help-toggle');
+    if (help) {
+      const hidden = help.classList.toggle('hidden');
+      if (toggle) toggle.textContent = hidden ? 'How to export ▾' : 'How to export ▴';
+    }
+  });
+
+  // ── G-sheet file upload ─────────────────────────────────
+  const gsheetFileInput = document.getElementById('gsheet-file');
+  gsheetFileInput?.addEventListener('change', () => {
+    const name = gsheetFileInput.files?.[0]?.name || 'Choose JSON file…';
+    const el = document.getElementById('gsheet-file-name');
+    if (el) el.textContent = name;
+  });
+
+  document.getElementById('btn-import-gsheet-file')?.addEventListener('click', async () => {
+    const statusEl = document.getElementById('gsheet-status');
+    const file = gsheetFileInput?.files?.[0];
+    if (!file) {
+      showImportStatus(statusEl, '⚠️ Please choose a JSON file first.', 'error');
+      return;
+    }
+    showImportStatus(statusEl, '⏳ Reading file…', 'loading');
+    try {
+      const raw = await readJSONFile(file);
+      const charData = parseGSheetJSON(raw);
+      state.characters.push(charData);
+      renderCharacterList();
+      showImportStatus(statusEl, `✅ Imported ${charData.name} from G-Sheet!`, 'success');
+      if (gsheetFileInput) gsheetFileInput.value = '';
+      const nameEl = document.getElementById('gsheet-file-name');
+      if (nameEl) nameEl.textContent = 'Choose JSON file…';
+    } catch (err) {
+      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
+    }
+  });
+
+  // ── G-sheet JSON paste import ───────────────────────────
+  document.getElementById('btn-import-gsheet')?.addEventListener('click', () => {
+    const statusEl = document.getElementById('gsheet-status');
+    const json = document.getElementById('gsheet-json')?.value?.trim();
+    if (!json) {
+      showImportStatus(statusEl, '⚠️ Please paste your character JSON first.', 'error');
+      return;
+    }
+    try {
+      const charData = parseGSheetJSON(json);
+      state.characters.push(charData);
+      renderCharacterList();
+      showImportStatus(statusEl, `✅ Imported ${charData.name} from G-Sheet JSON!`, 'success');
+      const jsonEl = document.getElementById('gsheet-json');
+      if (jsonEl) jsonEl.value = '';
+    } catch (err) {
+      showImportStatus(statusEl, `⚠️ Import failed: ${err.message}`, 'error');
+    }
+  });
+
+  // ── Custom attack rows ──────────────────────────────────
+  document.getElementById('btn-add-attack-row')?.addEventListener('click', () => {
+    addCustomAttackRow();
+  });
+
+  // ── Custom player form ──────────────────────────────────
   document.getElementById('btn-add-custom-player')?.addEventListener('click', () => {
     const name = document.getElementById('player-name')?.value?.trim();
     const hp = parseInt(document.getElementById('player-hp')?.value);
@@ -491,16 +597,22 @@ function setupCharactersTab() {
       return;
     }
 
+    // Collect attacks from custom attack rows
+    const attacks = collectCustomAttacks();
+
     const formData = {
       name,
       hp,
       ac,
+      class: document.getElementById('player-class')?.value?.trim() || 'Adventurer',
+      level: parseInt(document.getElementById('player-level')?.value) || 1,
       str: parseInt(document.getElementById('player-str')?.value) || 10,
       dex: parseInt(document.getElementById('player-dex')?.value) || 10,
       con: parseInt(document.getElementById('player-con')?.value) || 10,
       int: parseInt(document.getElementById('player-int')?.value) || 10,
       wis: parseInt(document.getElementById('player-wis')?.value) || 10,
       cha: parseInt(document.getElementById('player-cha')?.value) || 10,
+      attacks,
     };
 
     const charData = createManualCharacter(formData);
@@ -514,22 +626,30 @@ function setupCharactersTab() {
     }
 
     renderCharacterList();
-    const nameEl = document.getElementById('player-name');
-    const hpEl = document.getElementById('player-hp');
-    const acEl = document.getElementById('player-ac');
-    if (nameEl) nameEl.value = '';
-    if (hpEl) hpEl.value = '';
-    if (acEl) acEl.value = '';
+    // Clear form
+    ['player-name', 'player-class'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    ['player-hp', 'player-ac'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const levelEl = document.getElementById('player-level');
+    if (levelEl) levelEl.value = '1';
     ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(s => {
       const el = document.getElementById(`player-${s}`);
       if (el) el.value = '10';
     });
+    // Clear attack rows
+    const attackRows = document.getElementById('custom-attack-rows');
+    if (attackRows) attackRows.innerHTML = '';
 
     showToast(`🧙 ${charData.name} added to arena!`, 'success');
     switchTab('arena');
   });
 
-  // Add character from character list to arena
+  // ── Add character from character list to arena ──────────
   document.addEventListener('addCharToArena', (e) => {
     const char = state.characters.find(c => c.id === e.detail.charId);
     if (!char) return;
@@ -607,9 +727,238 @@ function closeAddModal() {
   state.pendingMonster = null;
 }
 
+// ─── Character Sheet Overlay ──────────────────────────────────────────────────
+
+let pendingCharId = null;
+
+function setupCharacterSheetOverlay() {
+  document.getElementById('charsheet-close')?.addEventListener('click', closeCharSheet);
+  document.getElementById('btn-close-charsheet')?.addEventListener('click', closeCharSheet);
+  document.querySelector('#charsheet-overlay .overlay-backdrop')?.addEventListener('click', closeCharSheet);
+
+  document.getElementById('btn-charsheet-to-arena')?.addEventListener('click', () => {
+    if (!pendingCharId) return;
+    const char = state.characters.find(c => c.id === pendingCharId);
+    if (!char) return;
+
+    const tokenOnGrid = state.tokens.find(t => t.characterData?.id === char.id || t.id === char.tokenId);
+    if (tokenOnGrid) {
+      showToast(`🧙 ${char.name} is already on the grid!`, 'info');
+      closeCharSheet();
+      switchTab('arena');
+      return;
+    }
+
+    const token = createCharacterToken(char);
+    char.tokenId = token.id;
+    const placed = addTokenToGrid(token);
+    if (!placed) {
+      showToast('⚠️ Arena is full!', 'warning');
+      return;
+    }
+    renderCharacterList();
+    closeCharSheet();
+    showToast(`🧙 ${char.name} added to arena!`, 'success');
+    switchTab('arena');
+  });
+
+  // Wire up roll buttons inside the character sheet overlay (event delegation)
+  const bodyEl = document.getElementById('charsheet-body');
+  if (bodyEl) {
+    bodyEl.addEventListener('click', (e) => {
+      const saveBtn = e.target.closest('.sb-save-throw-btn');
+      if (saveBtn) {
+        const ability = saveBtn.dataset.ability;
+        const mod = parseInt(saveBtn.dataset.mod, 10);
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const total = d20 + mod;
+        const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+        const label = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }[ability] || ability;
+        const resultEl = bodyEl.querySelector('.sb-saving-throw-result');
+        if (resultEl) {
+          const boldLabel = document.createElement('strong');
+          boldLabel.textContent = label;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(total);
+          resultEl.replaceChildren(`🎲 `, boldLabel, ` Save: d20(${d20})${modStr} = `, boldTotal);
+        }
+        return;
+      }
+
+      const skillBtn = e.target.closest('.sb-skill-check');
+      if (skillBtn) {
+        const check = skillBtn.dataset.check;
+        const mod = parseInt(skillBtn.dataset.mod, 10);
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const total = d20 + mod;
+        const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+        const label = { perception: 'Perception', stealth: 'Stealth', spellcasting: 'Spellcasting' }[check] || check;
+        const resultEl = bodyEl.querySelector('.sb-skill-result');
+        if (resultEl) {
+          const boldLabel = document.createElement('strong');
+          boldLabel.textContent = label;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(total);
+          resultEl.replaceChildren(`🎯 `, boldLabel, `: d20(${d20})${modStr} = `, boldTotal);
+        }
+        return;
+      }
+
+      const atkBtn = e.target.closest('.sb-atk-roll-btn');
+      if (atkBtn) {
+        const bonus = parseInt(atkBtn.dataset.bonus, 10);
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const isCrit = d20 === 20;
+        const attackRow = atkBtn.closest('.sb-attack-row');
+        if (attackRow) attackRow.dataset.critical = isCrit ? 'true' : '';
+        const total = d20 + bonus;
+        const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+        const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Attack';
+        const resultEl = attackRow?.querySelector('.sb-row-atk-result');
+        if (resultEl) {
+          const boldName = document.createElement('strong');
+          boldName.textContent = name;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(total);
+          if (isCrit) {
+            const critSpan = document.createElement('span');
+            critSpan.textContent = ' CRITICAL HIT!';
+            critSpan.style.color = 'var(--gold-accent, gold)';
+            resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal, critSpan);
+          } else {
+            resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal);
+          }
+        }
+        return;
+      }
+
+      const dmgBtn = e.target.closest('.sb-dmg-roll-btn');
+      if (dmgBtn) {
+        const attackRow = dmgBtn.closest('.sb-attack-row');
+        const isCrit = attackRow?.dataset.critical === 'true';
+        if (attackRow) attackRow.dataset.critical = '';
+        const damageParts = dmgBtn.dataset.damage.split('|');
+        let totalDmg = 0;
+        const rolls = [];
+        damageParts.forEach(dice => {
+          const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
+          const result = rollDice(effectiveDice);
+          totalDmg += result;
+          rolls.push(`${effectiveDice}(${result})`);
+        });
+        const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
+        const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
+        if (resultEl) {
+          const boldName = document.createElement('strong');
+          boldName.textContent = name;
+          const boldTotal = document.createElement('strong');
+          boldTotal.textContent = String(totalDmg);
+          if (isCrit) {
+            const critSpan = document.createElement('span');
+            critSpan.textContent = ' (Critical!)';
+            critSpan.style.color = 'var(--gold-accent, gold)';
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+          } else {
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+          }
+        }
+      }
+    });
+  }
+
+  // Handle viewCharSheet events from character list cards
+  document.addEventListener('viewCharSheet', (e) => {
+    const char = state.characters.find(c => c.id === e.detail.charId);
+    if (!char) return;
+    openCharSheet(char);
+  });
+}
+
+function openCharSheet(char) {
+  const overlay = document.getElementById('charsheet-overlay');
+  const nameEl = document.getElementById('charsheet-name');
+  const bodyEl = document.getElementById('charsheet-body');
+  const toArenaBtn = document.getElementById('btn-charsheet-to-arena');
+  if (!overlay || !nameEl || !bodyEl) return;
+
+  pendingCharId = char.id;
+  nameEl.textContent = char.name;
+  bodyEl.innerHTML = parseCharacterStatblock(char);
+
+  // Update "Add to Arena" button state
+  const tokenOnGrid = state.tokens.find(t => t.characterData?.id === char.id || t.id === char.tokenId);
+  if (toArenaBtn) {
+    if (tokenOnGrid) {
+      toArenaBtn.textContent = '✅ On Grid';
+      toArenaBtn.disabled = true;
+    } else {
+      toArenaBtn.textContent = '⚔️ Add to Arena';
+      toArenaBtn.disabled = false;
+    }
+  }
+
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCharSheet() {
+  const overlay = document.getElementById('charsheet-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  document.body.style.overflow = '';
+  pendingCharId = null;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function switchTab(tabName) {
   const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
   if (btn) btn.click();
+}
+
+/** Show an import status message in a status element */
+function showImportStatus(el, message, type) {
+  if (!el) return;
+  el.className = `import-status import-status-${type}`;
+  el.innerHTML = message;
+  el.classList.remove('hidden');
+}
+
+/** Add a new attack row to the custom player form */
+function addCustomAttackRow() {
+  const container = document.getElementById('custom-attack-rows');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = 'custom-attack-row';
+  row.innerHTML = `
+    <input type="text" class="text-input atk-name" placeholder="Attack name" autocomplete="off">
+    <input type="text" class="text-input atk-bonus" placeholder="+5" style="width:60px">
+    <input type="text" class="text-input atk-damage" placeholder="1d8+3" style="width:80px">
+    <button class="btn btn-sm btn-danger atk-remove" type="button" title="Remove attack">✕</button>
+  `;
+  row.querySelector('.atk-remove')?.addEventListener('click', () => row.remove());
+  container.appendChild(row);
+}
+
+/** Collect attacks from the custom attack rows */
+function collectCustomAttacks() {
+  const rows = document.querySelectorAll('#custom-attack-rows .custom-attack-row');
+  const attacks = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.atk-name')?.value?.trim();
+    const bonusRaw = row.querySelector('.atk-bonus')?.value?.trim() || '0';
+    const damage = row.querySelector('.atk-damage')?.value?.trim() || '1d4';
+    if (!name) return;
+    const hitBonus = parseInt(bonusRaw.replace(/^\+/, '')) || 0;
+    attacks.push({ name, hitBonus, damageDice: [damage], isAoe: false });
+  });
+  return attacks;
+}
+
+/** Double the number of dice in a notation string for critical hits */
+function doubleDiceNotation(notation) {
+  const str = String(notation).trim().toLowerCase().replace(/\s/g, '');
+  const match = str.match(/^(\d+)d(\d+)([+-]\d+)?$/);
+  if (!match) return notation;
+  return `${parseInt(match[1]) * 2}d${match[2]}${match[3] || ''}`;
 }
