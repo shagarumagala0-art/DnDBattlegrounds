@@ -337,7 +337,9 @@ export function updateTokenInfoPanel(token) {
   if (speedEl) {
     if (token.monsterData?.speed) {
       const full = formatSpeed(token.monsterData.speed);
-      speedEl.textContent = full.split(',')[0];
+      // Show only the walk speed in the compact stat; reveal full in tooltip
+      const primary = full.includes(',') ? full.slice(0, full.indexOf(',')) : full;
+      speedEl.textContent = primary;
       speedEl.title = full;
     } else if (token.characterData?.speed) {
       speedEl.textContent = typeof token.characterData.speed === 'number'
@@ -513,7 +515,7 @@ export function updateTokenInfoPanel(token) {
     if (m) {
       const lines = [];
       if (m.vulnerable?.length) {
-        const vals = m.vulnerable.map(v => (typeof v === 'object' ? (v.resist || v.vulnerable || []).join(', ') : v)).join('; ');
+        const vals = m.vulnerable.map(v => (typeof v === 'object' ? (v.vulnerable || []).join(', ') : v)).join('; ');
         lines.push(`<span class="res-line res-vuln"><strong>VULN:</strong> ${vals}</span>`);
       }
       if (m.resist?.length) {
