@@ -77,6 +77,21 @@ export function rollD20(mod = 0) {
 }
 
 /**
+ * Get the spellcasting ability modifier (highest of INT, WIS, CHA).
+ * Tie-breaking priority: INT > WIS > CHA.
+ * @param {number} intMod
+ * @param {number} wisMod
+ * @param {number} chaMod
+ * @returns {{ mod: number, ability: string }}
+ */
+export function getSpellcastingModifier(intMod, wisMod, chaMod) {
+  const mod = Math.max(intMod, wisMod, chaMod);
+  const ability = intMod >= wisMod && intMod >= chaMod ? 'INT'
+    : wisMod >= chaMod ? 'WIS' : 'CHA';
+  return { mod, ability };
+}
+
+/**
  * Convert ability score to modifier
  * @param {number} score
  * @returns {number}

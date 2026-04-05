@@ -2,7 +2,8 @@ import { state } from './state.js';
 import {
   parse5etools, parseCR, formatCR, getAverageHp, getAcValue,
   getModifier, formatModifier, getMonsterType, generateId, getAbbr,
-  rollDice, showToast, formatSpeed, formatAlignment, formatSize
+  rollDice, showToast, formatSpeed, formatAlignment, formatSize,
+  getSpellcastingModifier
 } from './utils.js';
 
 /** All six D&D saving throw abilities, ordered for display. */
@@ -17,6 +18,9 @@ const SAVE_ABILITIES = [
 
 /** Maps ability keys to their display labels. */
 const SAVE_LABEL_MAP = Object.fromEntries(SAVE_ABILITIES.map(({ key, label }) => [key, label]));
+
+/** Maps skill check keys to their display labels. */
+const SKILL_CHECK_LABELS = { perception: 'Perception', stealth: 'Stealth', spellcasting: 'Spellcasting' };
 
 /**
  * List of bestiary JSON files to load from the /data/ directory.
@@ -198,8 +202,8 @@ export function showStatblock(monster) {
   bodyEl.innerHTML = parseStatblock(monster);
 
   // Wire up saving throw roll buttons
-  const saveResultEl = bodyEl.querySelector('.sb-save-result');
-  bodyEl.querySelectorAll('.sb-save-roll').forEach(btn => {
+  const saveResultEl = bodyEl.querySelector('.sb-saving-throw-result');
+  bodyEl.querySelectorAll('.sb-save-roll:not(.sb-skill-check)').forEach(btn => {
     btn.addEventListener('click', () => {
       const ability = btn.dataset.ability;
       const mod = parseInt(btn.dataset.mod, 10);
@@ -215,6 +219,28 @@ export function showStatblock(monster) {
         boldTotal.textContent = String(total);
         saveResultEl.replaceChildren(
           `🎲 `, boldLabel, ` Save: d20(${d20})${modStr} = `, boldTotal
+        );
+      }
+    });
+  });
+
+  // Wire up skill check roll buttons
+  const skillResultEl = bodyEl.querySelector('.sb-skill-result');
+  bodyEl.querySelectorAll('.sb-skill-check').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const check = btn.dataset.check;
+      const mod = parseInt(btn.dataset.mod, 10);
+      const d20 = Math.floor(Math.random() * 20) + 1;
+      const total = d20 + mod;
+      const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+      const label = SKILL_CHECK_LABELS[check];
+      if (skillResultEl && label) {
+        const boldLabel = document.createElement('strong');
+        boldLabel.textContent = label;
+        const boldTotal = document.createElement('strong');
+        boldTotal.textContent = String(total);
+        skillResultEl.replaceChildren(
+          `🎯 `, boldLabel, `: d20(${d20})${modStr} = `, boldTotal
         );
       }
     });
@@ -367,7 +393,36 @@ export function parseStatblock(monster) {
   }
 
   html += `</div>
-        <div class="sb-save-result"></div>
+        <div class="sb-save-result sb-saving-throw-result"></div>
+      </div>
+      <div class="sb-divider"></div>`;
+
+  // Skill Checks: Perception (WIS), Stealth (DEX), Spellcasting (highest of INT/WIS/CHA)
+  const perceptionBonus = (monster.skill && monster.skill.perception !== undefined)
+    ? parseInt(monster.skill.perception, 10) || wisMod
+    : wisMod;
+  const stealthBonus = (monster.skill && monster.skill.stealth !== undefined)
+    ? parseInt(monster.skill.stealth, 10) || dexMod
+    : dexMod;
+  const { mod: spellcastingBonus, ability: spellcastingAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
+
+  html += `<div class="sb-skill-checks">
+        <div class="sb-saves-title">🎯 Skill Checks <span class="sb-saves-hint">(tap to roll)</span></div>
+        <div class="sb-skill-checks-grid">
+          <button class="sb-save-roll sb-skill-check${monster.skill?.perception !== undefined ? ' sb-save-proficient' : ''}" data-check="perception" data-mod="${perceptionBonus}" title="Perception check (WIS): ${formatModifier(perceptionBonus)}">
+            <span class="sb-save-name">Percept.</span>
+            <span class="sb-save-mod">${formatModifier(perceptionBonus)}</span>
+          </button>
+          <button class="sb-save-roll sb-skill-check${monster.skill?.stealth !== undefined ? ' sb-save-proficient' : ''}" data-check="stealth" data-mod="${stealthBonus}" title="Stealth check (DEX): ${formatModifier(stealthBonus)}">
+            <span class="sb-save-name">Stealth</span>
+            <span class="sb-save-mod">${formatModifier(stealthBonus)}</span>
+          </button>
+          <button class="sb-save-roll sb-skill-check" data-check="spellcasting" data-mod="${spellcastingBonus}" title="Spellcasting check (highest of INT/WIS/CHA = ${spellcastingAbility}): ${formatModifier(spellcastingBonus)}">
+            <span class="sb-save-name">Spell.</span>
+            <span class="sb-save-mod">${formatModifier(spellcastingBonus)}</span>
+          </button>
+        </div>
+        <div class="sb-save-result sb-skill-result"></div>
       </div>
       <div class="sb-divider"></div>
       <div class="sb-secondary">`;
