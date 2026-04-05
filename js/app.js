@@ -315,8 +315,6 @@ function setupCharactersTab() {
       int: parseInt(document.getElementById('player-int')?.value) || 10,
       wis: parseInt(document.getElementById('player-wis')?.value) || 10,
       cha: parseInt(document.getElementById('player-cha')?.value) || 10,
-      toHit: document.getElementById('player-tohit')?.value?.trim() || '',
-      damage: document.getElementById('player-damage')?.value?.trim() || '',
     };
 
     const charData = createManualCharacter(formData);
@@ -340,10 +338,6 @@ function setupCharactersTab() {
       const el = document.getElementById(`player-${s}`);
       if (el) el.value = '10';
     });
-    const toHitEl = document.getElementById('player-tohit');
-    const dmgEl = document.getElementById('player-damage');
-    if (toHitEl) toHitEl.value = '';
-    if (dmgEl) dmgEl.value = '';
 
     showToast(`🧙 ${charData.name} added to arena!`, 'success');
     switchTab('arena');
