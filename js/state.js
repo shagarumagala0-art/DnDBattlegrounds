@@ -37,6 +37,8 @@ export const state = {
  * @property {number} cha - Charisma score
  * @property {string} color - Token color scheme
  * @property {Object|null} monsterData - Reference to original monster data
+ * @property {number|null} initiative - Initiative roll result (null = not yet rolled)
+ * @property {string[]} conditions - Active D&D conditions (e.g. 'prone', 'poisoned')
  */
 
 /**

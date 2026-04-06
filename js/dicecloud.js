@@ -182,6 +182,8 @@ export function createCharacterToken(charData) {
     wis: charData.wis || 10,
     cha: charData.cha || 10,
     dexMod: getModifier(charData.dex || 10),
+    initiative: null,
+    conditions: [],
     color: 'player',
     monsterData: null,
     characterData: charData,

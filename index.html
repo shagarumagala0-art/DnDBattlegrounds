@@ -76,9 +76,30 @@
             <span id="info-ac">—</span>
           </div>
           <div class="stat-group">
+            <label>Speed</label>
+            <span id="info-speed">—</span>
+          </div>
+          <div class="stat-group">
             <label>Position</label>
             <span id="info-position">—</span>
           </div>
+        </div>
+        <div class="token-initiative-row">
+          <span class="token-rolls-section-label">⚡ Initiative</span>
+          <div class="initiative-controls">
+            <span id="info-initiative" class="initiative-val">—</span>
+            <input type="number" class="hp-input initiative-input" id="initiative-input" placeholder="Set" min="-10" max="30" />
+            <button class="btn btn-sm btn-secondary" id="btn-set-initiative">Set</button>
+            <button class="btn btn-sm btn-gold" id="btn-roll-initiative" title="Roll initiative: d20 + DEX modifier">🎲 Roll</button>
+          </div>
+        </div>
+        <div class="token-conditions-section">
+          <span class="token-rolls-section-label">🩹 Conditions</span>
+          <div class="conditions-grid" id="conditions-grid"></div>
+        </div>
+        <div class="token-resistances hidden" id="token-resistances">
+          <span class="token-rolls-section-label">🛡️ Resistances &amp; Immunities</span>
+          <div id="token-resistances-content" class="resistances-content"></div>
         </div>
         <div class="token-rolls">
           <div class="token-rolls-header">

@@ -747,6 +747,7 @@ export function createMonsterToken(monster, overrideHp = null) {
     cha: monster.cha || 10,
     dexMod,
     initiative: null,
+    conditions: [],
     color: 'monster',
     monsterData: monster,
   };
