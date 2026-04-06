@@ -269,12 +269,14 @@ export function showStatblock(monster) {
   bodyEl.querySelectorAll('.sb-dmg-roll-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const damageParts = btn.dataset.damage.split('|');
+      const damageTypesParts = (btn.dataset.damageTypes || '').split('|');
       let totalDmg = 0;
       const rolls = [];
-      damageParts.forEach(dice => {
+      damageParts.forEach((dice, idx) => {
         const result = rollDice(dice);
         totalDmg += result;
-        rolls.push(`${dice}(${result})`);
+        const dmgType = (damageTypesParts[idx] || '').toLowerCase();
+        rolls.push(dmgType ? `${dice}(${result}) ${dmgType}` : `${dice}(${result})`);
       });
       const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
       const resultEl = btn.closest('.sb-attack-row')?.querySelector('.sb-row-dmg-result');
@@ -539,6 +541,10 @@ export function parseStatblock(monster) {
 
     attacks.forEach(atk => {
       const displayName = cleanActionName(atk.name);
+      const damageSummary = atk.damageDice.map((dice, i) => {
+        const type = (atk.damageTypes || [])[i];
+        return type ? `${dice} ${type}` : dice;
+      }).join(' + ');
       html += `<div class="sb-attack-row">
           <div class="sb-attack-row-header">
             <span class="sb-attack-name" title="${displayName}">${displayName}</span>
@@ -552,9 +558,9 @@ export function parseStatblock(monster) {
               </button>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" title="${displayName}: damage">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${displayName}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
-              <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
+              <span class="sb-atk-val">${damageSummary}</span>
             </button>`;
 
       html += `</div></div>

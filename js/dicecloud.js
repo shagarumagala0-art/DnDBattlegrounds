@@ -443,6 +443,10 @@ export function parseCharacterStatblock(char) {
         <div class="sb-attack-list">`;
 
     attacks.forEach(atk => {
+      const damageSummary = atk.damageDice.map((dice, i) => {
+        const type = (atk.damageTypes || [])[i];
+        return type ? `${dice} ${type}` : dice;
+      }).join(' + ');
       html += `<div class="sb-attack-row">
           <div class="sb-attack-row-header">
             <span class="sb-attack-name" title="${atk.name}">${atk.name}</span>
@@ -455,9 +459,9 @@ export function parseCharacterStatblock(char) {
               </button>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" title="${atk.name}: damage">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${atk.name}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
-              <span class="sb-atk-val">${atk.damageDice[0] || '—'}</span>
+              <span class="sb-atk-val">${damageSummary}</span>
             </button>`;
 
       html += `</div></div>
