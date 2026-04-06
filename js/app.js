@@ -7,7 +7,7 @@ import {
   initGrid, addTokenToGrid, removeTokenFromGrid, renderTokens,
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect, selectTokenById
 } from './grid.js';
-import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
+import { loadBestiaries, loadSpells, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
 import { parseGSheetJSON } from './import.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice, formatSpeed } from './utils.js';
@@ -26,8 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupCharacterSheetOverlay();
   setupOverviewTab();
 
-  // Load monster data
+  // Load monster data and spell details
   await loadBestiaries();
+  await loadSpells();
 
   // Initial monster render
   const monsters = searchMonsters('', '', '');

@@ -1806,6 +1806,84 @@ body::before {
   animation: resultFadeOut 0.5s ease forwards;
 }
 
+/* Spells section in statblock */
+.sb-spells {
+  padding: 8px 0 4px;
+}
+
+.sb-spell-header {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.sb-spell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sb-spell-row {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  border-left: 3px solid var(--gold-muted);
+}
+
+.sb-spell-row-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.sb-spell-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.sb-spell-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.sb-spell-freq {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.sb-spell-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.sb-spell-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sb-spell-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
 /* Modal sheet */
 .modal-sheet .modal-body {
   padding: 16px 20px;
