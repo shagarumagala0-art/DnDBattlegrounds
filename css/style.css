@@ -583,6 +583,29 @@ body::before {
 .res-resist strong { color: #3498db; }
 .res-immune strong { color: var(--gold-muted); }
 
+/* ── Target token row ─────────────────────────────────────── */
+.token-target-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.token-target-row .token-rolls-section-label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.target-select {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  padding: 4px 6px;
+  height: 28px;
+}
+
 .token-info-footer {
   display: flex;
   justify-content: flex-end;

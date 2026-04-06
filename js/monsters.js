@@ -359,7 +359,7 @@ function getMonsterSaveBonus(monster, ability) {
  * Actions with {@damage} but no {@hit} (AOE / save-based) get damage roll only.
  *
  * @param {Object} monster
- * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[]}>}
+ * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[], damageTypes: string[]}>}
  */
 export function parseMonsterAttacks(monster) {
   const attacks = [];
@@ -371,11 +371,12 @@ export function parseMonsterAttacks(monster) {
     if (!fullText) continue;
 
     const hitMatch = fullText.match(/\{@hit\s+(-?\d+)\}/);
-    const damageMatches = [...fullText.matchAll(/\{@damage\s+([^}]+)\}/g)];
+    const damageWithTypeMatches = [...fullText.matchAll(/\{@damage\s+([^}]+)\}\s*(\w+)?/g)];
 
-    if (damageMatches.length === 0) continue;
+    if (damageWithTypeMatches.length === 0) continue;
 
-    const damageDice = damageMatches.map(m => m[1].trim().replace(/\s/g, ''));
+    const damageDice = damageWithTypeMatches.map(m => m[1].trim().replace(/\s/g, ''));
+    const damageTypes = damageWithTypeMatches.map(m => (m[2] || '').toLowerCase());
 
     if (hitMatch) {
       attacks.push({
@@ -383,6 +384,7 @@ export function parseMonsterAttacks(monster) {
         isAoe: false,
         hitBonus: parseInt(hitMatch[1], 10),
         damageDice,
+        damageTypes,
       });
     } else {
       attacks.push({
@@ -390,6 +392,7 @@ export function parseMonsterAttacks(monster) {
         isAoe: true,
         hitBonus: null,
         damageDice,
+        damageTypes,
       });
     }
   }
