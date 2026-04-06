@@ -40,6 +40,7 @@
         <button class="btn btn-primary btn-sm" id="btn-add-monster">🐉 Monster</button>
         <button class="btn btn-secondary btn-sm" id="btn-add-player">🧙 Player</button>
         <button class="btn btn-danger btn-sm" id="btn-clear-arena">🗑️ Clear</button>
+        <button class="btn btn-gold btn-sm" id="btn-set-arena">⚙️ Set Arena</button>
       </div>
 
       <div id="grid-container">
@@ -328,6 +329,47 @@
       <div class="overlay-actions">
         <button class="btn btn-primary" id="btn-confirm-add">✅ Place on Grid</button>
         <button class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- Set Arena Size Modal                                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="set-arena-modal" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content modal-sheet">
+      <div class="overlay-header">
+        <h2>⚙️ Set Arena Size</h2>
+        <button class="btn-close" id="set-arena-modal-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="arena-rows-input">Rows</label>
+          <input
+            type="number"
+            id="arena-rows-input"
+            value="20"
+            min="5"
+            max="50"
+            class="text-input"
+          >
+        </div>
+        <div class="form-group">
+          <label for="arena-cols-input">Columns</label>
+          <input
+            type="number"
+            id="arena-cols-input"
+            value="20"
+            min="5"
+            max="50"
+            class="text-input"
+          >
+        </div>
+      </div>
+      <div class="overlay-actions">
+        <button class="btn btn-primary" id="btn-confirm-set-arena">✅ Apply</button>
+        <button class="btn btn-secondary" id="btn-cancel-set-arena">Cancel</button>
       </div>
     </div>
   </div>

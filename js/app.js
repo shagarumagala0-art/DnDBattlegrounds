@@ -5,7 +5,8 @@
 import { state, changeTokenHp, setTokenHp, findToken } from './state.js';
 import {
   initGrid, addTokenToGrid, removeTokenFromGrid, renderTokens,
-  deselectToken, clearGrid, onTokenSelect, onTokenDeselect, selectTokenById
+  deselectToken, clearGrid, onTokenSelect, onTokenDeselect, selectTokenById,
+  resizeGrid, getGridSize
 } from './grid.js';
 import { loadBestiaries, loadSpells, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
   setupGrid();
   setupArenaToolbar();
+  setupSetArenaModal();
   setupMonsterTab();
   setupCharactersTab();
   setupOverlays();
@@ -127,6 +129,46 @@ function setupArenaToolbar() {
       hideTokenInfoPanel();
       showToast('🗑️ Arena cleared', 'info');
     }
+  });
+
+  document.getElementById('btn-set-arena')?.addEventListener('click', openSetArenaModal);
+}
+
+// ─── Set Arena Modal ──────────────────────────────────────────────────────────
+
+function openSetArenaModal() {
+  const modal = document.getElementById('set-arena-modal');
+  if (!modal) return;
+  const { rows, cols } = getGridSize();
+  const rowsInput = document.getElementById('arena-rows-input');
+  const colsInput = document.getElementById('arena-cols-input');
+  if (rowsInput) rowsInput.value = rows;
+  if (colsInput) colsInput.value = cols;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSetArenaModal() {
+  const modal = document.getElementById('set-arena-modal');
+  if (modal) modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function setupSetArenaModal() {
+  document.getElementById('set-arena-modal-close')?.addEventListener('click', closeSetArenaModal);
+  document.getElementById('btn-cancel-set-arena')?.addEventListener('click', closeSetArenaModal);
+  document.querySelector('#set-arena-modal .overlay-backdrop')?.addEventListener('click', closeSetArenaModal);
+
+  document.getElementById('btn-confirm-set-arena')?.addEventListener('click', () => {
+    const rowsVal = parseInt(document.getElementById('arena-rows-input')?.value, 10);
+    const colsVal = parseInt(document.getElementById('arena-cols-input')?.value, 10);
+
+    const rows = Number.isFinite(rowsVal) ? Math.max(5, Math.min(50, rowsVal)) : 20;
+    const cols = Number.isFinite(colsVal) ? Math.max(5, Math.min(50, colsVal)) : 20;
+
+    resizeGrid(rows, cols);
+    closeSetArenaModal();
+    showToast(`⚙️ Arena resized to ${rows}×${cols}`, 'info');
   });
 }
 
