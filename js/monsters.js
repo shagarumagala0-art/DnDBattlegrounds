@@ -373,9 +373,11 @@ export function parseMonsterAttacks(monster) {
     if (!fullText) continue;
 
     const hitMatch = fullText.match(/\{@hit\s+(-?\d+)\}/);
-    // In 5etools format, the damage type word immediately follows the {@damage} tag
-    // e.g. "{@damage 1d6+2} piercing damage" → captures "piercing"
-    const damageWithTypeMatches = [...fullText.matchAll(/\{@damage\s+([^}]+)\}\s*(\w+)?/g)];
+    // In 5etools format, the damage type word follows the {@damage} tag,
+    // sometimes separated by a closing paren and/or space, e.g.:
+    //   "{@damage 1d6+2} piercing damage"   → captures "piercing"
+    //   "({@damage 2d10 + 7}) piercing damage" → captures "piercing"
+    const damageWithTypeMatches = [...fullText.matchAll(/\{@damage\s+([^}]+)\}[^a-zA-Z]*([a-zA-Z]+)?/g)];
 
     if (damageWithTypeMatches.length === 0) continue;
 
