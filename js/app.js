@@ -224,6 +224,22 @@ function renderOverview() {
 
 // ─── Token Info Panel ─────────────────────────────────────────────────────────
 
+/**
+ * Schedule a result element to fade out after 2 seconds and then clear its content.
+ * @param {HTMLElement} el
+ */
+function scheduleResultFade(el) {
+  clearTimeout(el._fadeTimer);
+  el.classList.remove('result-fading');
+  el._fadeTimer = setTimeout(() => {
+    el.classList.add('result-fading');
+    setTimeout(() => {
+      el.replaceChildren();
+      el.classList.remove('result-fading');
+    }, 500);
+  }, 2000);
+}
+
 function setupTokenInfoPanel() {
   const hpAmountEl = document.getElementById('hp-amount');
   const parseHpAmount = () => {
@@ -338,19 +354,6 @@ function setupTokenInfoPanel() {
     });
   });
 
-  // Schedule a result element to fade out after 2 seconds and then clear its content
-  function scheduleResultFade(el) {
-    clearTimeout(el._fadeTimer);
-    el.classList.remove('result-fading');
-    el._fadeTimer = setTimeout(() => {
-      el.classList.add('result-fading');
-      setTimeout(() => {
-        el.replaceChildren();
-        el.classList.remove('result-fading');
-      }, 500);
-    }, 2000);
-  }
-
   // Attack roll and damage roll buttons (event delegation on the dynamic attack list)
   const attackListEl = document.getElementById('token-attack-list');
   if (attackListEl) {
@@ -419,9 +422,9 @@ function setupTokenInfoPanel() {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const raw = rollDice(effectiveDice);
           totalDmg += raw;
-          rolls.push(`${effectiveDice}(${raw})`);
-
           const dmgType = (damageTypesParts[idx] || '').toLowerCase();
+          rolls.push(dmgType ? `${effectiveDice}(${raw}) ${dmgType}` : `${effectiveDice}(${raw})`);
+
           if (targetToken) {
             if (dmgType && immuneTypes.includes(dmgType)) {
               // immune: contributes 0
@@ -637,13 +640,17 @@ export function updateTokenInfoPanel(token) {
         dmgBtn.className = 'sb-atk-btn sb-dmg-roll-btn';
         dmgBtn.dataset.damage = atk.damageDice.join('|');
         dmgBtn.dataset.damageTypes = (atk.damageTypes || []).join('|');
-        dmgBtn.title = `${displayName}: damage`;
+        const damageSummary = atk.damageDice.map((dice, i) => {
+          const type = (atk.damageTypes || [])[i];
+          return type ? `${dice} ${type}` : dice;
+        }).join(' + ');
+        dmgBtn.title = `${displayName}: ${damageSummary}`;
         const dmgLabel = document.createElement('span');
         dmgLabel.className = 'sb-atk-label';
         dmgLabel.textContent = 'DMG';
         const dmgVal = document.createElement('span');
         dmgVal.className = 'sb-atk-val';
-        dmgVal.textContent = atk.damageDice[0] || '—';
+        dmgVal.textContent = damageSummary;
         dmgBtn.append(dmgLabel, dmgVal);
         btnsDiv.appendChild(dmgBtn);
 
@@ -986,16 +993,63 @@ function setupCharacterSheetOverlay() {
         const isCrit = attackRow?.dataset.critical === 'true';
         if (attackRow) attackRow.dataset.critical = '';
         const damageParts = dmgBtn.dataset.damage.split('|');
+        const damageTypesParts = (dmgBtn.dataset.damageTypes || '').split('|');
+
+        const targetToken = getSelectedTargetToken();
+        const m = targetToken?.monsterData;
+        const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
+        const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
+
         let totalDmg = 0;
+        let appliedDmg = 0;
         const rolls = [];
-        damageParts.forEach(dice => {
+        damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const result = rollDice(effectiveDice);
           totalDmg += result;
-          rolls.push(`${effectiveDice}(${result})`);
+          const dmgType = (damageTypesParts[idx] || '').toLowerCase();
+          rolls.push(dmgType ? `${effectiveDice}(${result}) ${dmgType}` : `${effectiveDice}(${result})`);
+
+          if (targetToken) {
+            if (dmgType && immuneTypes.includes(dmgType)) {
+              // immune: contributes 0
+            } else if (dmgType && resistTypes.includes(dmgType)) {
+              appliedDmg += Math.floor(result / 2);
+            } else {
+              appliedDmg += result;
+            }
+          } else {
+            appliedDmg += result;
+          }
         });
+
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
         const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
+
+        const attackHitData = attackRow?.dataset.attackHit;
+        const attackHit = !attackHitData || attackHitData === 'true';
+        if (attackRow) attackRow.dataset.attackHit = '';
+
+        let resistNote = '';
+        if (targetToken && attackHit) {
+          const dmgChange = changeTokenHp(targetToken.id, -appliedDmg);
+          if (dmgChange) {
+            renderTokens();
+            if (targetToken === state.selectedToken) {
+              updateTokenInfoPanel(targetToken);
+            } else if (state.selectedToken) {
+              populateTargetSelect(state.selectedToken);
+            }
+          }
+          if (appliedDmg === 0 && totalDmg > 0) {
+            resistNote = ' → 0 (IMMUNE)';
+          } else if (appliedDmg < totalDmg) {
+            resistNote = ` → ${appliedDmg} (RESIST)`;
+          }
+          const toastType = appliedDmg === 0 ? 'info' : 'warning';
+          showToast(`💥 ${targetToken.name} takes ${appliedDmg} damage (${targetToken.hp}/${targetToken.maxHp} HP)`, toastType, 2500);
+        }
+
         if (resultEl) {
           const boldName = document.createElement('strong');
           boldName.textContent = name;
@@ -1003,12 +1057,18 @@ function setupCharacterSheetOverlay() {
           boldTotal.textContent = String(totalDmg);
           if (isCrit) {
             const critSpan = document.createElement('span');
-            critSpan.textContent = ' (Critical!)';
+            critSpan.textContent = ' (Critical!)' + resistNote;
             critSpan.style.color = 'var(--gold-accent, gold)';
             resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+          } else if (resistNote) {
+            const noteSpan = document.createElement('span');
+            noteSpan.textContent = resistNote;
+            noteSpan.style.color = 'var(--text-secondary)';
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, noteSpan);
           } else {
             resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
           }
+          scheduleResultFade(resultEl);
         }
       }
     });
