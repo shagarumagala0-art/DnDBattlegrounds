@@ -8,7 +8,7 @@ import {
   deselectToken, clearGrid, onTokenSelect, onTokenDeselect, selectTokenById,
   resizeGrid, getGridSize
 } from './grid.js';
-import { loadBestiaries, loadSpells, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
+import { loadBestiaries, loadSpells, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, parseMonsterSpells, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
 import { parseGSheetJSON } from './import.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice, formatSpeed } from './utils.js';
@@ -534,6 +534,38 @@ function setupTokenInfoPanel() {
       }
     });
   }
+
+  // Spell cast buttons (event delegation on the dynamic spell list)
+  const spellListEl = document.getElementById('token-spell-list');
+  if (spellListEl) {
+    spellListEl.addEventListener('click', (e) => {
+      const castBtn = e.target.closest('.sb-spell-cast-btn');
+      if (!castBtn) return;
+      const spellRow = castBtn.closest('.sb-spell-row');
+      const name = spellRow?.querySelector('.sb-spell-name')?.textContent || 'Spell';
+      const resultEl = spellRow?.querySelector('.sb-spell-result');
+      // Toggle expanded description
+      const existingDesc = spellRow?.querySelector('.sb-spell-desc');
+      if (existingDesc) {
+        existingDesc.remove();
+        return;
+      }
+      const desc = spellRow?.dataset.spellDesc;
+      const duration = spellRow?.dataset.spellDuration;
+      if (desc && spellRow) {
+        const descEl = document.createElement('div');
+        descEl.className = 'sb-spell-desc';
+        descEl.textContent = desc + (duration ? ` — Duration: ${duration}` : '');
+        spellRow.appendChild(descEl);
+      }
+      if (resultEl) {
+        const boldName = document.createElement('strong');
+        boldName.textContent = name;
+        resultEl.replaceChildren(`✨ `, boldName, `: Cast!`);
+        scheduleResultFade(resultEl);
+      }
+    });
+  }
 }
 
 export function updateTokenInfoPanel(token) {
@@ -720,6 +752,75 @@ export function updateTokenInfoPanel(token) {
       populateTargetSelect(token);
     } else {
       attackSection.classList.add('hidden');
+    }
+  }
+
+  // Render spells section (monsters with spellcasting)
+  const spellsSection = document.getElementById('token-spells-section');
+  const spellListEl = document.getElementById('token-spell-list');
+  if (spellsSection && spellListEl) {
+    spellListEl.replaceChildren();
+    const spells = token.monsterData ? parseMonsterSpells(token.monsterData) : [];
+    const schoolNames = { A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment', I: 'Illusion', N: 'Necromancy', T: 'Transmutation', V: 'Evocation' };
+    if (spells.length > 0) {
+      spells.forEach(sp => {
+        const row = document.createElement('div');
+        row.className = 'sb-spell-row';
+        if (sp.spellData?.desc) row.dataset.spellDesc = sp.spellData.desc;
+        if (sp.spellData?.duration) row.dataset.spellDuration = sp.spellData.duration;
+
+        const header = document.createElement('div');
+        header.className = 'sb-spell-row-header';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'sb-spell-name';
+        nameSpan.textContent = sp.spellName;
+
+        if (sp.detail) {
+          const detailSpan = document.createElement('span');
+          detailSpan.className = 'sb-spell-detail';
+          detailSpan.textContent = sp.detail;
+          header.append(nameSpan, detailSpan);
+        } else {
+          header.append(nameSpan);
+        }
+
+        const freqBadge = document.createElement('span');
+        freqBadge.className = 'sb-spell-freq';
+        freqBadge.textContent = sp.frequency;
+        header.appendChild(freqBadge);
+
+        const castBtn = document.createElement('button');
+        castBtn.className = 'sb-spell-cast-btn';
+        castBtn.title = `Cast ${sp.spellName}`;
+        const castLabel = document.createElement('span');
+        castLabel.className = 'sb-atk-label';
+        castLabel.textContent = 'CAST';
+        castBtn.appendChild(castLabel);
+        header.appendChild(castBtn);
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'sb-spell-meta';
+        if (sp.spellData) {
+          const levelText = sp.spellData.level === 0 ? 'Cantrip' : `Level ${sp.spellData.level}`;
+          const schoolText = schoolNames[sp.spellData.school] || sp.spellData.school;
+          [levelText, schoolText, sp.spellData.castingTime, sp.spellData.range].filter(Boolean).forEach(text => {
+            const tag = document.createElement('span');
+            tag.className = 'sb-spell-tag';
+            tag.textContent = text;
+            metaDiv.appendChild(tag);
+          });
+        }
+
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'sb-spell-result';
+
+        row.append(header, metaDiv, resultDiv);
+        spellListEl.appendChild(row);
+      });
+      spellsSection.classList.remove('hidden');
+    } else {
+      spellsSection.classList.add('hidden');
     }
   }
 
