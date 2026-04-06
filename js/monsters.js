@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { BESTIARY_DATA } from '../data/bestiary-data.js';
 import {
   parse5etools, parseCR, formatCR, getAverageHp, getAcValue,
   getModifier, formatModifier, getMonsterType, generateId, getAbbr,
@@ -51,9 +52,12 @@ export async function loadSpells() {
 /**
  * Load all bestiary JSON files from the /data/ directory and populate
  * state.monsters with the combined, deduplicated monster list.
+ * Starts with the hardcoded BESTIARY_DATA as a reliable base, then
+ * supplements with additional monsters fetched from the JSON files.
  */
 export async function loadBestiaries() {
-  const allMonsters = [];
+  // Start with the hardcoded bestiary data that is always available
+  const allMonsters = [...(BESTIARY_DATA.monster || [])];
 
   for (const filename of BESTIARY_FILES) {
     try {
