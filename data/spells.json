@@ -1,0 +1,1498 @@
+{
+  "spell": [
+    {
+      "name": "Alarm",
+      "level": 1,
+      "school": "A",
+      "castingTime": "1 minute (ritual)",
+      "range": "30 feet",
+      "duration": "8 hours",
+      "desc": "You set an alarm against unwanted intrusion. Ward an area; trigger an audible or mental alarm if trespassed."
+    },
+    {
+      "name": "Alter Self",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "You assume a different form. Change your appearance, grow natural weapons, or adapt for aquatic environments."
+    },
+    {
+      "name": "Animal Friendship",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "24 hours",
+      "desc": "Convince a beast it means you no harm. The beast must have an Intelligence of 3 or lower."
+    },
+    {
+      "name": "Animal Messenger",
+      "level": 2,
+      "school": "E",
+      "castingTime": "1 action (ritual)",
+      "range": "30 feet",
+      "duration": "24 hours",
+      "desc": "A Tiny beast carries a brief message to a location you specify."
+    },
+    {
+      "name": "Animate Dead",
+      "level": 3,
+      "school": "N",
+      "castingTime": "1 minute",
+      "range": "10 feet",
+      "duration": "Instantaneous",
+      "desc": "Create an undead servant. Turn a pile of bones or a corpse into a skeleton or zombie under your control."
+    },
+    {
+      "name": "Antilife Shell",
+      "level": 5,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Self (10-foot radius)",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "A shimmering barrier extends out from you, preventing living creatures from passing or reaching through it."
+    },
+    {
+      "name": "Antimagic Field",
+      "level": 8,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Self (10-foot radius)",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "A sphere of antimagic surrounds you, suppressing magic within or passing through the area."
+    },
+    {
+      "name": "Arcane Eye",
+      "level": 4,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Create an invisible magical eye to send in any direction. See through it with darkvision up to 30 ft."
+    },
+    {
+      "name": "Arcane Gate",
+      "level": 6,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "500 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create linked teleportation portals that remain open as long as you maintain concentration."
+    },
+    {
+      "name": "Arcane Lock",
+      "level": 2,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Until dispelled",
+      "desc": "Magically lock a closed door, window, chest, or entrance. You and those you designate can still pass."
+    },
+    {
+      "name": "Astral Projection",
+      "level": 9,
+      "school": "N",
+      "castingTime": "1 hour",
+      "range": "10 feet",
+      "duration": "Special",
+      "desc": "Project your astral body and those of up to eight willing creatures into the Astral Plane."
+    },
+    {
+      "name": "Bane",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Up to three creatures of your choice must subtract 1d4 from attack rolls and saving throws."
+    },
+    {
+      "name": "Banishment",
+      "level": 4,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Attempt to send one creature to another plane. On a failed Charisma save the target is banished."
+    },
+    {
+      "name": "Beast Sense",
+      "level": 2,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "You perceive through a willing beast's senses. See, hear, and smell using the animal's senses."
+    },
+    {
+      "name": "Bestow Curse",
+      "level": 3,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Touch a creature and curse it. Choose one of several curse effects: disadvantage, Wis saves vs action loss, etc."
+    },
+    {
+      "name": "Bigby's Hand",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Create a Large hand of shimmering force. Can clenched fist, forceful hand, grasping hand, or interposing hand."
+    },
+    {
+      "name": "Blade Barrier",
+      "level": 6,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create a vertical wall of whirling, razor-sharp blades made of magical energy that deals 6d10 slashing damage."
+    },
+    {
+      "name": "Blight",
+      "level": 4,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Instantaneous",
+      "desc": "Necromantic energy washes over a creature. On a failed Con save, takes 8d8 necrotic damage (half on success)."
+    },
+    {
+      "name": "Blink",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "1 minute",
+      "desc": "Roll a d20 each turn. On 11+, you vanish to the Ethereal Plane until the start of your next turn."
+    },
+    {
+      "name": "Blur",
+      "level": 2,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Your body blurs and wavers. Attackers have disadvantage on attack rolls against you."
+    },
+    {
+      "name": "Burning Hands",
+      "level": 1,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Self (15-foot cone)",
+      "duration": "Instantaneous",
+      "desc": "Shoot a thin sheet of flames from your outstretched fingertips. 3d6 fire damage (Dex save for half)."
+    },
+    {
+      "name": "Calm Emotions",
+      "level": 2,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Suppress strong emotions in a group. Creatures in a 20-foot radius must make Charisma saving throws."
+    },
+    {
+      "name": "Charm Person",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "1 hour",
+      "desc": "Attempt to charm a humanoid within range. On a failed Wis save, it is charmed by you for the duration."
+    },
+    {
+      "name": "Circle of Death",
+      "level": 6,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Instantaneous",
+      "desc": "A sphere of negative energy ripples out. Creatures in a 60-foot radius take 8d6 necrotic damage (Con save for half)."
+    },
+    {
+      "name": "Clairvoyance",
+      "level": 3,
+      "school": "D",
+      "castingTime": "10 minutes",
+      "range": "1 mile",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create an invisible sensor at a location within range. Hear or see through it."
+    },
+    {
+      "name": "Cloudkill",
+      "level": 5,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create a 20-foot sphere of poisonous yellow-green fog. Living creatures in it take 5d8 poison damage each turn."
+    },
+    {
+      "name": "Command",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "1 round",
+      "desc": "Speak a one-word command to a creature. On a failed Wis save, the creature follows the command on its turn."
+    },
+    {
+      "name": "Commune with Nature",
+      "level": 5,
+      "school": "D",
+      "castingTime": "1 minute (ritual)",
+      "range": "Self",
+      "duration": "Instantaneous",
+      "desc": "Briefly become one with nature and gain knowledge of the surrounding territory up to 3 miles."
+    },
+    {
+      "name": "Comprehend Languages",
+      "level": 1,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Self",
+      "duration": "1 hour",
+      "desc": "Understand the literal meaning of any spoken language and written language you see."
+    },
+    {
+      "name": "Cone of Cold",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Self (60-foot cone)",
+      "duration": "Instantaneous",
+      "desc": "Blast of cold air erupts from your hands. Creatures in the cone take 8d8 cold damage (Con save for half)."
+    },
+    {
+      "name": "Confusion",
+      "level": 4,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Assault and twist minds of up to creatures in a 10-foot sphere. They must make Wis saves or act erratically."
+    },
+    {
+      "name": "Contagion",
+      "level": 5,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "7 days",
+      "desc": "Your touch inflicts disease. Make a melee spell attack; on hit, the target is poisoned until the spell ends."
+    },
+    {
+      "name": "Control Water",
+      "level": 4,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "300 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Direct the movement of water. Flood, part, redirect, or whirlpool a body of water."
+    },
+    {
+      "name": "Control Weather",
+      "level": 8,
+      "school": "T",
+      "castingTime": "10 minutes",
+      "range": "Self (5-mile radius)",
+      "duration": "Concentration, up to 8 hours",
+      "desc": "Take control of the weather within 5 miles. Change precipitation, temperature, and wind."
+    },
+    {
+      "name": "Create Food and Water",
+      "level": 3,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Instantaneous",
+      "desc": "Conjure 45 pounds of food and 30 gallons of water on the ground or in containers within range."
+    },
+    {
+      "name": "Create or Destroy Water",
+      "level": 1,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Instantaneous",
+      "desc": "Create up to 10 gallons of clean water or destroy the same amount of water."
+    },
+    {
+      "name": "Create Undead",
+      "level": 6,
+      "school": "N",
+      "castingTime": "1 minute",
+      "range": "10 feet",
+      "duration": "Instantaneous",
+      "desc": "Create up to three undead servants (ghouls, shadows, or wights) that obey your commands."
+    },
+    {
+      "name": "Crown of Madness",
+      "level": 2,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "One humanoid of your choice that you can see must succeed on a Wis save or become charmed and act erratically."
+    },
+    {
+      "name": "Cure Wounds",
+      "level": 1,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "A creature you touch regains a number of hit points equal to 1d8 + your spellcasting ability modifier."
+    },
+    {
+      "name": "Dancing Lights",
+      "level": 0,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Create up to four torch-sized lights or one glowing form that sheds dim light in a 10-foot radius."
+    },
+    {
+      "name": "Darkness",
+      "level": 2,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Magical darkness spreads from a point within range, filling a 15-foot-radius sphere."
+    },
+    {
+      "name": "Daylight",
+      "level": 3,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "1 hour",
+      "desc": "A 60-foot-radius sphere of light spreads out from a point you choose within range."
+    },
+    {
+      "name": "Detect Evil and Good",
+      "level": 1,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Know whether there is an aberration, celestial, elemental, fey, fiend, or undead within 30 feet."
+    },
+    {
+      "name": "Detect Magic",
+      "level": 1,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Self",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Sense the presence of magic within 30 feet. See a faint aura around any visible creature or object that bears magic."
+    },
+    {
+      "name": "Detect Thoughts",
+      "level": 2,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Read the thoughts of certain creatures. Probe deeper to get surface thoughts, then deeper to read full thoughts."
+    },
+    {
+      "name": "Dimension Door",
+      "level": 4,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "500 feet",
+      "duration": "Instantaneous",
+      "desc": "Teleport yourself from your current location to any other spot within range."
+    },
+    {
+      "name": "Disguise Self",
+      "level": 1,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "1 hour",
+      "desc": "Make yourself look different. Change height by 1 foot, weight, clothing, and facial features."
+    },
+    {
+      "name": "Dispel Evil and Good",
+      "level": 5,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Shimmering energy surrounds and protects you. Advantage on saves against extraplanar creatures. Can dismiss them."
+    },
+    {
+      "name": "Dispel Magic",
+      "level": 3,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Instantaneous",
+      "desc": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on it ends."
+    },
+    {
+      "name": "Dissonant Whispers",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "Whisper a discordant melody. The target must make a Wis save or take 3d6 psychic damage and use its reaction to flee."
+    },
+    {
+      "name": "Divination",
+      "level": 4,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Self",
+      "duration": "Instantaneous",
+      "desc": "Receive a truthful reply from a divine power about a specific goal, event, or activity to occur within 7 days."
+    },
+    {
+      "name": "Dominate Beast",
+      "level": 4,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Attempt to beguile a beast. On a failed Wis save, the creature is charmed and you control its actions."
+    },
+    {
+      "name": "Dominate Monster",
+      "level": 8,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Attempt to beguile any creature you can see. On a failed Wis save, the creature is charmed and you control it."
+    },
+    {
+      "name": "Dominate Person",
+      "level": 5,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Attempt to beguile a humanoid. On a failed Wis save, the creature is charmed and you control its actions."
+    },
+    {
+      "name": "Druidcraft",
+      "level": 0,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Instantaneous",
+      "desc": "Whispering to the spirits of nature, create minor effects like tiny nature effects, predict weather, etc."
+    },
+    {
+      "name": "Enhance Ability",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Grant a creature advantage on ability checks of your choice for the duration."
+    },
+    {
+      "name": "Enlarge/Reduce",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Cause a creature or object to grow larger or smaller."
+    },
+    {
+      "name": "Entangle",
+      "level": 1,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Grasping weeds and vines sprout from the ground. Creatures in a 20-foot square must make Str saves or be restrained."
+    },
+    {
+      "name": "Etherealness",
+      "level": 7,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Up to 8 hours",
+      "desc": "Step into the Border Ethereal. Move in any direction (including up/down). Return at will."
+    },
+    {
+      "name": "Evard's Black Tentacles",
+      "level": 4,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Tentacles fill a 20-foot square on ground in range. Creatures there take 3d6 bludgeoning and are restrained."
+    },
+    {
+      "name": "Fabricate",
+      "level": 4,
+      "school": "T",
+      "castingTime": "10 minutes",
+      "range": "120 feet",
+      "duration": "Instantaneous",
+      "desc": "Convert raw materials into products. You can fabricate a Large object or several smaller objects."
+    },
+    {
+      "name": "Faerie Fire",
+      "level": 1,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Outline objects and creatures in a 20-foot cube with light. Affected creatures can't benefit from being invisible."
+    },
+    {
+      "name": "Fear",
+      "level": 3,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Self (30-foot cone)",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Project a phantasmal image of worst fears. Creatures in cone must make Wis saves or become frightened."
+    },
+    {
+      "name": "Feeblemind",
+      "level": 8,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Instantaneous",
+      "desc": "Blast a creature's mind, attempting to shatter its intellect and personality. Target makes an Int save or drops Int and Cha to 1."
+    },
+    {
+      "name": "Find Steed",
+      "level": 2,
+      "school": "C",
+      "castingTime": "10 minutes",
+      "range": "30 feet",
+      "duration": "Instantaneous",
+      "desc": "Summon a spirit that takes the form of an unusually intelligent, strong, and loyal steed."
+    },
+    {
+      "name": "Finger of Death",
+      "level": 7,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "Send negative energy coursing through a creature. 7d8+30 necrotic damage (Con save for half). Killed humanoids rise as zombies."
+    },
+    {
+      "name": "Fireball",
+      "level": 3,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Instantaneous",
+      "desc": "Bright streak explodes into a 20-foot-radius sphere of fire. Creatures in area take 8d6 fire damage (Dex save for half)."
+    },
+    {
+      "name": "Flame Strike",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "A vertical column of divine fire roars down from the heavens. Creatures in a 10-foot radius take 4d6 fire + 4d6 radiant."
+    },
+    {
+      "name": "Fly",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "A willing creature gains a flying speed of 60 feet for the duration."
+    },
+    {
+      "name": "Fog Cloud",
+      "level": 1,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Create a 20-foot-radius sphere of fog centered on a point. The area is heavily obscured."
+    },
+    {
+      "name": "Forcecage",
+      "level": 7,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "100 feet",
+      "duration": "1 hour",
+      "desc": "Immovable, invisible, cube-shaped prison of magical force springs into existence. Can be barred box or open lattice."
+    },
+    {
+      "name": "Freedom of Movement",
+      "level": 4,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "1 hour",
+      "desc": "Touch a willing creature. For the duration, the creature ignores difficult terrain and magical effects that reduce speed."
+    },
+    {
+      "name": "Friends",
+      "level": 0,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Gain advantage on Charisma checks against one creature. When the spell ends, the creature realizes you used magic."
+    },
+    {
+      "name": "Gaseous Form",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Transform a willing creature and everything it's wearing into a misty cloud. 10-foot flying speed, resistance to nonmagical damage."
+    },
+    {
+      "name": "Gate",
+      "level": 9,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Open a portal linking an unoccupied space you can see within range to a precise location on a different plane."
+    },
+    {
+      "name": "Globe of Invulnerability",
+      "level": 6,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Self (10-foot radius)",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Immobile, slightly shimmering barrier appears within range. Any spell of 5th level or lower can't affect creatures inside."
+    },
+    {
+      "name": "Greater Invisibility",
+      "level": 4,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "You or a creature you touch becomes invisible until the spell ends. Attacks and spells don't break it."
+    },
+    {
+      "name": "Greater Restoration",
+      "level": 5,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Imbue a creature with positive energy to undo debilitating effects. Remove charm, petrification, curse, ability score reduction, or max HP reduction."
+    },
+    {
+      "name": "Guardian of Faith",
+      "level": 4,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "8 hours",
+      "desc": "A Large spectral guardian appears, attacking hostile creatures that approach within 10 feet for 20 radiant damage."
+    },
+    {
+      "name": "Guidance",
+      "level": 0,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Touch a willing creature. Once before the spell ends, the creature can roll a d4 and add the result to one ability check."
+    },
+    {
+      "name": "Gust of Wind",
+      "level": 2,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Self (60-foot line)",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Line of strong wind blasts from you in a 60-foot line. Creatures must make Str saves or be pushed 15 feet away."
+    },
+    {
+      "name": "Hallucinatory Terrain",
+      "level": 4,
+      "school": "I",
+      "castingTime": "10 minutes",
+      "range": "300 feet",
+      "duration": "24 hours",
+      "desc": "Make natural terrain in a 150-foot cube look, sound, and smell like some other sort of natural terrain."
+    },
+    {
+      "name": "Heal",
+      "level": 6,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "Choose a creature within range. It regains 70 hit points, and all diseases, blindness, and deafness are removed."
+    },
+    {
+      "name": "Heat Metal",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Make a manufactured metal object glow red-hot. The creature holding it takes 2d8 fire damage and may drop it."
+    },
+    {
+      "name": "Hold Monster",
+      "level": 5,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Choose a creature you can see. It must make a Wis save or be paralyzed for the duration. Any creature type."
+    },
+    {
+      "name": "Hold Person",
+      "level": 2,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Choose a humanoid you can see within range. The target must succeed on a Wis save or be paralyzed for the duration."
+    },
+    {
+      "name": "Hunger of Hadar",
+      "level": 3,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Open a gateway to the dark between stars. A 20-foot-radius sphere of blackness. Creatures inside take 2d6 cold/acid damage."
+    },
+    {
+      "name": "Hypnotic Pattern",
+      "level": 3,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Create a twisting pattern of colors that weaves through the air. Creatures seeing it must make Wis saves or be charmed."
+    },
+    {
+      "name": "Ice Storm",
+      "level": 4,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "300 feet",
+      "duration": "Instantaneous",
+      "desc": "Hail of rock-hard ice pounds in a 20-foot-radius/40-foot-high cylinder. 2d8 bludgeoning + 4d6 cold damage."
+    },
+    {
+      "name": "Insect Plague",
+      "level": 5,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "300 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Swarming locusts fill a 20-foot-radius sphere. The area is lightly obscured. Creatures take 4d10 piercing damage."
+    },
+    {
+      "name": "Invisibility",
+      "level": 2,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "A creature you touch becomes invisible. Anything it's wearing or carrying is also invisible. Ends on attacking or casting."
+    },
+    {
+      "name": "Knock",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "Choose an object in range that is locked, stuck, or barred. The object opens. Sets off locks, wedges, and bolts."
+    },
+    {
+      "name": "Lesser Restoration",
+      "level": 2,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Touch a creature and end one disease or one condition afflicting it: blinded, deafened, paralyzed, or poisoned."
+    },
+    {
+      "name": "Levitate",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "One creature or object of your choice rises vertically, up to 20 feet, and remains suspended there."
+    },
+    {
+      "name": "Light",
+      "level": 0,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "1 hour",
+      "desc": "Touch one object no larger than 10 feet. The object sheds bright light in a 20-foot radius and dim light an additional 20 feet."
+    },
+    {
+      "name": "Lightning Bolt",
+      "level": 3,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Self (100-foot line)",
+      "duration": "Instantaneous",
+      "desc": "A bolt of lightning forms a line 100 feet long. Each creature in the line takes 8d6 lightning damage (Dex save for half)."
+    },
+    {
+      "name": "Locate Animals or Plants",
+      "level": 2,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Self",
+      "duration": "Instantaneous",
+      "desc": "Describe or name a specific kind of beast or plant. You sense the direction and distance to the closest one within 5 miles."
+    },
+    {
+      "name": "Locate Object",
+      "level": 2,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Describe or name an object familiar to you. You sense the direction and distance to it, as long as it's within 1000 feet."
+    },
+    {
+      "name": "Mage Armor",
+      "level": 1,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "8 hours",
+      "desc": "Touch a willing creature wearing no armor. Its base AC becomes 13 + its Dexterity modifier."
+    },
+    {
+      "name": "Mage Hand",
+      "level": 0,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "1 minute",
+      "desc": "Create a spectral, floating hand that can pick up, move, or manipulate light objects up to 10 pounds."
+    },
+    {
+      "name": "Major Image",
+      "level": 3,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create the image of an object, creature, or visible phenomenon no larger than a 20-foot cube. Includes sound, smell, temperature."
+    },
+    {
+      "name": "Mass Cure Wounds",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "A wave of healing energy washes out. Up to six creatures in a 30-foot radius each regain 3d8 + spellcasting modifier HP."
+    },
+    {
+      "name": "Mass Suggestion",
+      "level": 6,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "24 hours",
+      "desc": "Suggest a course of action to up to twelve creatures you can see. Each must make a Wis save or follow the suggestion."
+    },
+    {
+      "name": "Maze",
+      "level": 8,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Banish a creature into a labyrinthine demiplane. It remains there until it makes a DC 20 Intelligence check to escape."
+    },
+    {
+      "name": "Meld into Stone",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action (ritual)",
+      "range": "Touch",
+      "duration": "8 hours",
+      "desc": "Step into a stone object or surface large enough to contain you. Use stone to hide, rest, or wait."
+    },
+    {
+      "name": "Mending",
+      "level": 0,
+      "school": "T",
+      "castingTime": "1 minute",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Repair a single break or tear in an object you touch, such as a broken link in a chain, a torn cloak, etc."
+    },
+    {
+      "name": "Message",
+      "level": 0,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "1 round",
+      "desc": "Point your finger toward a creature within range and whisper a message. The target can whisper back."
+    },
+    {
+      "name": "Mind Blank",
+      "level": 8,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "24 hours",
+      "desc": "Until the spell ends, one willing creature is immune to psychic damage, divination spells, and the charmed condition."
+    },
+    {
+      "name": "Minor Illusion",
+      "level": 0,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "1 minute",
+      "desc": "Create a sound or an image of an object within range. A sound continues or be intermittent throughout the duration."
+    },
+    {
+      "name": "Mirage Arcane",
+      "level": 7,
+      "school": "I",
+      "castingTime": "10 minutes",
+      "range": "Sight",
+      "duration": "10 days",
+      "desc": "Make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other sort of terrain."
+    },
+    {
+      "name": "Mislead",
+      "level": 5,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Become invisible and simultaneously create an illusory double. Direct the double to move and gesture."
+    },
+    {
+      "name": "Modify Memory",
+      "level": 5,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Attempt to reshape another creature's memories. The target must make a Wis save or you alter its memory of an event."
+    },
+    {
+      "name": "Nondetection",
+      "level": 3,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "8 hours",
+      "desc": "For the duration, you hide a target from divination magic and scrying sensors."
+    },
+    {
+      "name": "Otto's Irresistible Dance",
+      "level": 6,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Choose one creature you can see. It must make a Wis save or begin dancing uncontrollably."
+    },
+    {
+      "name": "Pass without Trace",
+      "level": 2,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Veil of shadows envelops you and companions within 30 feet. +10 bonus to Dexterity (Stealth) checks."
+    },
+    {
+      "name": "Phantasmal Force",
+      "level": 2,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Craft an illusion that takes root in the mind of one creature. On a failed Int save, the target perceives the illusion."
+    },
+    {
+      "name": "Phantom Steed",
+      "level": 3,
+      "school": "I",
+      "castingTime": "1 minute (ritual)",
+      "range": "30 feet",
+      "duration": "1 hour",
+      "desc": "Create a Large quasi-real horse-like creature, with a speed of 100 feet."
+    },
+    {
+      "name": "Plane Shift",
+      "level": 7,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Transport yourself and up to eight willing creatures to a different plane. Can also banish an unwilling creature."
+    },
+    {
+      "name": "Plant Growth",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action or 8 hours",
+      "range": "150 feet",
+      "duration": "Instantaneous",
+      "desc": "Cause plants within 100 feet to grow rapidly, making area difficult terrain. Or enrich land for a year."
+    },
+    {
+      "name": "Polymorph",
+      "level": 4,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Transform a creature into a new form. Unwilling targets make Wis saves. Change into beast with CR \u2264 target's CR/level."
+    },
+    {
+      "name": "Power Word Kill",
+      "level": 9,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": "Utter a word of power that can compel one creature to die instantly. If it has 100 or fewer HP, it dies."
+    },
+    {
+      "name": "Prestidigitation",
+      "level": 0,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "10 feet",
+      "duration": "Up to 1 hour",
+      "desc": "Create minor magical effects: small fire, clean or soil, chill or warm, create a mark, create a trinket, etc."
+    },
+    {
+      "name": "Programmed Illusion",
+      "level": 6,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Until dispelled",
+      "desc": "Create an illusion of an object, creature, or phenomenon that activates when a specific condition is met."
+    },
+    {
+      "name": "Project Image",
+      "level": 7,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "500 miles",
+      "duration": "Concentration, up to 1 day",
+      "desc": "Create an illusory copy of yourself. It looks and sounds like you and can appear anywhere within range."
+    },
+    {
+      "name": "Protection from Evil and Good",
+      "level": 1,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "A willing creature is protected against aberrations, celestials, elementals, fey, fiends, and undead."
+    },
+    {
+      "name": "Rary's Telepathic Bond",
+      "level": 5,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "30 feet",
+      "duration": "1 hour",
+      "desc": "Forge a telepathic link among up to eight willing creatures. They can communicate telepathically."
+    },
+    {
+      "name": "Remove Curse",
+      "level": 3,
+      "school": "A",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "At your touch, all curses affecting one creature or object end. If the object is a cursed magic item, its curse remains."
+    },
+    {
+      "name": "Reverse Gravity",
+      "level": 7,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "100 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Reverse gravity in a 50-foot-radius, 100-foot-high cylinder. Creatures and objects fall upward."
+    },
+    {
+      "name": "Revivify",
+      "level": 3,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Touch a creature that has died within the last minute. It returns to life with 1 hit point."
+    },
+    {
+      "name": "Scrying",
+      "level": 5,
+      "school": "D",
+      "castingTime": "10 minutes",
+      "range": "Self",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "See and hear a particular creature in the same plane. The target makes a Wis save (modified by familiarity)."
+    },
+    {
+      "name": "See Invisibility",
+      "level": 2,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "1 hour",
+      "desc": "You see invisible creatures and objects as if they were visible, and can see into the Ethereal Plane."
+    },
+    {
+      "name": "Seeming",
+      "level": 5,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "8 hours",
+      "desc": "Change the appearance of any number of creatures you can see. Each target appears how you decide."
+    },
+    {
+      "name": "Sending",
+      "level": 3,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Unlimited",
+      "duration": "1 round",
+      "desc": "Send a short message of up to 25 words to a creature with which you are familiar. The target can reply."
+    },
+    {
+      "name": "Silence",
+      "level": 2,
+      "school": "I",
+      "castingTime": "1 action (ritual)",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "No sound can be created or pass through a 20-foot-radius sphere. Creatures inside are immune to thunder damage."
+    },
+    {
+      "name": "Silent Image",
+      "level": 1,
+      "school": "I",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create the image of an object, creature, or visible phenomenon no larger than a 15-foot cube."
+    },
+    {
+      "name": "Sleep",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "1 minute",
+      "desc": "Send creatures into a magical slumber. Roll 5d8; total determines HP of creatures affected, starting with lowest."
+    },
+    {
+      "name": "Sleet Storm",
+      "level": 3,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Freezing rain and sleet fall in a 20-foot-high cylinder, 40-foot radius. Ground is difficult terrain."
+    },
+    {
+      "name": "Slow",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Alter time around up to six creatures. Speed is halved, -2 penalty to AC and Dex saves, can't use reactions."
+    },
+    {
+      "name": "Spare the Dying",
+      "level": 0,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Touch a living creature that has 0 hit points. The creature becomes stable."
+    },
+    {
+      "name": "Speak with Animals",
+      "level": 1,
+      "school": "D",
+      "castingTime": "1 action (ritual)",
+      "range": "Self",
+      "duration": "10 minutes",
+      "desc": "You gain the ability to comprehend and verbally communicate with beasts for the duration."
+    },
+    {
+      "name": "Speak with Dead",
+      "level": 3,
+      "school": "N",
+      "castingTime": "1 action",
+      "range": "10 feet",
+      "duration": "10 minutes",
+      "desc": "Grant the semblance of life to a corpse. You can ask it up to five questions. It answers from its memories."
+    },
+    {
+      "name": "Spider Climb",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "A willing creature gains the ability to move up, down, and across vertical surfaces and upside down along ceilings."
+    },
+    {
+      "name": "Spike Growth",
+      "level": 2,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "150 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Ground in a 20-foot radius becomes covered in sharp spikes. Area is difficult terrain; 2d4 piercing for every 5 ft."
+    },
+    {
+      "name": "Stinking Cloud",
+      "level": 3,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "90 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Create a 20-foot-radius sphere of yellow, nauseating gas. Creatures inside who fail Con saves waste their action."
+    },
+    {
+      "name": "Stone Shape",
+      "level": 4,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": "Touch a stone object or section of stone, shaping it into any form that suits your purpose."
+    },
+    {
+      "name": "Suggestion",
+      "level": 2,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 8 hours",
+      "desc": "Suggest a course of activity to one creature you can see. On a failed Wis save, it follows the suggestion."
+    },
+    {
+      "name": "Tasha's Hideous Laughter",
+      "level": 1,
+      "school": "E",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "A creature perceives everything as hilariously funny and falls into fits of laughter. On failed Wis save, it's incapacitated."
+    },
+    {
+      "name": "Telekinesis",
+      "level": 5,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "You can move or manipulate creatures or objects using your mind. Move object up to 1000 lbs. or creature up to Large."
+    },
+    {
+      "name": "Teleport",
+      "level": 7,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "10 feet",
+      "duration": "Instantaneous",
+      "desc": "Teleport yourself and up to eight willing creatures or a single object to a destination you know on the same plane."
+    },
+    {
+      "name": "Tenser's Floating Disk",
+      "level": 1,
+      "school": "C",
+      "castingTime": "1 action (ritual)",
+      "range": "30 feet",
+      "duration": "1 hour",
+      "desc": "Create a circular, horizontal plane of force, 3 feet in diameter and 1 inch thick, that floats 3 feet off the ground."
+    },
+    {
+      "name": "Thaumaturgy",
+      "level": 0,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "30 feet",
+      "duration": "Up to 1 minute",
+      "desc": "Manifest a minor wonder: your voice booms, flames flicker, the ground trembles, an unlocked door opens, etc."
+    },
+    {
+      "name": "Thunderwave",
+      "level": 1,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "Self (15-foot cube)",
+      "duration": "Instantaneous",
+      "desc": "A wave of thunderous force sweeps out. Creatures in a 15-foot cube take 2d8 thunder damage and are pushed 10 feet."
+    },
+    {
+      "name": "Time Stop",
+      "level": 9,
+      "school": "T",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Instantaneous",
+      "desc": "Briefly stop the flow of time for everyone but yourself. Take 1d4+1 turns in a row."
+    },
+    {
+      "name": "Tongues",
+      "level": 3,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "1 hour",
+      "desc": "Grant a creature the ability to understand any spoken language and to speak a language any creature speaking nearby understands."
+    },
+    {
+      "name": "Tree Stride",
+      "level": 5,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Gain the ability to enter a tree and move from inside it to inside another tree of the same kind."
+    },
+    {
+      "name": "True Seeing",
+      "level": 6,
+      "school": "D",
+      "castingTime": "1 action",
+      "range": "Touch",
+      "duration": "1 hour",
+      "desc": "Gives a willing creature truesight, notices secret doors, and can see into the Ethereal Plane, all out to 120 feet."
+    },
+    {
+      "name": "Unseen Servant",
+      "level": 1,
+      "school": "C",
+      "castingTime": "1 action (ritual)",
+      "range": "60 feet",
+      "duration": "1 hour",
+      "desc": "Create an invisible, mindless, shapeless force that performs simple tasks at your command."
+    },
+    {
+      "name": "Wall of Fire",
+      "level": 4,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 1 minute",
+      "desc": "Create a wall of fire on solid surface. One side of the wall deals 5d8 fire damage to each creature within 10 feet."
+    },
+    {
+      "name": "Wall of Force",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create an invisible wall of force on a surface you choose. Can be flat or hemispherical. Nothing passes through."
+    },
+    {
+      "name": "Wall of Ice",
+      "level": 6,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "Create a wall of ice on a solid surface. 10-foot-wide panels, 10 feet tall and 1 foot thick. 10d6 cold to breaching creatures."
+    },
+    {
+      "name": "Wall of Stone",
+      "level": 5,
+      "school": "V",
+      "castingTime": "1 action",
+      "range": "120 feet",
+      "duration": "Concentration, up to 10 minutes",
+      "desc": "A nonmagical wall of solid stone springs up at a point you choose within range. Each panel is 10 by 10 by 6 inches."
+    },
+    {
+      "name": "Water Breathing",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action (ritual)",
+      "range": "30 feet",
+      "duration": "24 hours",
+      "desc": "Grant up to ten willing creatures the ability to breathe underwater until the spell ends."
+    },
+    {
+      "name": "Water Walk",
+      "level": 3,
+      "school": "T",
+      "castingTime": "1 action (ritual)",
+      "range": "30 feet",
+      "duration": "1 hour",
+      "desc": "Grant the ability to move across any liquid surface as if it were solid ground."
+    },
+    {
+      "name": "Web",
+      "level": 2,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "duration": "Concentration, up to 1 hour",
+      "desc": "Conjure a mass of thick, sticky webbing that fills a 20-foot cube. Creatures that fail Dex saves are restrained."
+    },
+    {
+      "name": "Wind Walk",
+      "level": 6,
+      "school": "T",
+      "castingTime": "1 minute",
+      "range": "30 feet",
+      "duration": "8 hours",
+      "desc": "You and up to ten willing creatures transform into gaseous form and gain a flying speed of 300 feet."
+    },
+    {
+      "name": "Wish",
+      "level": 9,
+      "school": "C",
+      "castingTime": "1 action",
+      "range": "Self",
+      "duration": "Instantaneous",
+      "desc": "The mightiest spell a mortal can cast. Duplicate any spell of 8th level or lower, or create reality-altering effects."
+    }
+  ]
+}

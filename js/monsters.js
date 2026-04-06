@@ -29,6 +29,25 @@ const BESTIARY_FILES = [
   'bestiary-mpmm.json',
 ];
 
+/** Spell lookup map populated by loadSpells(). Keys are normalised lowercase names. */
+const spellLookup = {};
+
+/**
+ * Load spell details from /data/spells.json and populate spellLookup.
+ */
+export async function loadSpells() {
+  try {
+    const response = await fetch('./data/spells.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    for (const spell of (data.spell || [])) {
+      spellLookup[spell.name.toLowerCase()] = spell;
+    }
+  } catch (err) {
+    console.warn('Could not load spells.json:', err.message);
+  }
+}
+
 /**
  * Load all bestiary JSON files from the /data/ directory and populate
  * state.monsters with the combined, deduplicated monster list.
@@ -407,6 +426,86 @@ export function parseMonsterAttacks(monster) {
 }
 
 /**
+ * Map school abbreviation to full school name.
+ * @param {string} abbr
+ * @returns {string}
+ */
+function getSchoolName(abbr) {
+  const schools = {
+    A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment',
+    I: 'Illusion', N: 'Necromancy', T: 'Transmutation', V: 'Evocation',
+  };
+  return schools[abbr] || abbr;
+}
+
+/**
+ * Extract a flat list of spells a monster can cast from its spellcasting entries.
+ * Returns an array of objects: { spellName, frequency, detail, spellData }
+ * where frequency is 'at will', '1/day', '2/day', '3/day', etc.
+ *
+ * @param {Object} monster
+ * @returns {Array<{spellName: string, frequency: string, detail: string, spellData: Object|null}>}
+ */
+export function parseMonsterSpells(monster) {
+  const result = [];
+  if (!monster.spellcasting) return result;
+
+  for (const sc of monster.spellcasting) {
+    // At-will spells
+    if (sc.will) {
+      for (const entry of sc.will) {
+        const { name, detail } = extractSpellName(entry);
+        result.push({ spellName: name, frequency: 'at will', detail, spellData: spellLookup[name.toLowerCase()] || null });
+      }
+    }
+    // Daily / limited-use spells
+    if (sc.daily) {
+      for (const [key, entries] of Object.entries(sc.daily)) {
+        // Key examples: "1e", "2e", "3e" (each), "1", "2", "3" (shared)
+        const count = parseInt(key, 10);
+        const frequency = `${count}/day`;
+        for (const entry of entries) {
+          const { name, detail } = extractSpellName(entry);
+          result.push({ spellName: name, frequency, detail, spellData: spellLookup[name.toLowerCase()] || null });
+        }
+      }
+    }
+    // Slot-based spells (headerEntries list format)
+    if (sc.spells) {
+      for (const [levelKey, slotEntry] of Object.entries(sc.spells)) {
+        const level = parseInt(levelKey, 10);
+        const spells = slotEntry.spells || [];
+        const slots = slotEntry.slots !== undefined ? ` (${slotEntry.slots} slot${slotEntry.slots !== 1 ? 's' : ''})` : '';
+        const frequency = level === 0 ? 'at will' : `level ${level}${slots}`;
+        for (const entry of spells) {
+          const { name, detail } = extractSpellName(entry);
+          result.push({ spellName: name, frequency, detail, spellData: spellLookup[name.toLowerCase()] || null });
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Extract a clean spell name and any parenthetical detail from a 5etools spell entry string.
+ * e.g. "{@spell charm person} (as 5th-level spell)" → { name: "Charm Person", detail: "(as 5th-level spell)" }
+ * @param {string} entry
+ * @returns {{ name: string, detail: string }}
+ */
+function extractSpellName(entry) {
+  if (typeof entry !== 'string') return { name: String(entry), detail: '' };
+  const match = entry.match(/\{@spell\s+([^|}]+)(?:\|[^}]*)?\}/i);
+  let name = match ? match[1].trim() : entry.replace(/\{@[^}]+\}/g, '').trim();
+  // Title-case
+  name = name.replace(/\b\w/g, c => c.toUpperCase());
+  // Capture any parenthetical annotation outside the tag
+  const detailMatch = entry.replace(/\{@[^}]+\}/g, '').trim();
+  return { name, detail: detailMatch || '' };
+}
+
+/**
  * Strip 5etools inline tags from an action name for plain-text display.
  * e.g. "Singularity Breath {@recharge 5}" → "Singularity Breath (Recharge 5–6)"
  * @param {string} name
@@ -574,6 +673,54 @@ export function parseStatblock(monster) {
       html += `<div class="sb-row-dmg-result"></div>
           </div>
         </div>`;
+    });
+
+    html += `</div>
+      </div>
+      <div class="sb-divider"></div>`;
+  }
+
+  // Spells section (below attacks)
+  const monsterSpells = parseMonsterSpells(monster);
+  if (monsterSpells.length > 0) {
+    // Build a header description from the spellcasting entry
+    const scHeader = monster.spellcasting && monster.spellcasting[0]?.headerEntries
+      ? parse5etools(monster.spellcasting[0].headerEntries[0] || '')
+      : '';
+    html += `<div class="sb-spells">
+        <div class="sb-saves-title">✨ Spells</div>`;
+    if (scHeader) {
+      html += `<p class="sb-spell-header">${scHeader}</p>`;
+    }
+    html += `<div class="sb-spell-list">`;
+
+    monsterSpells.forEach(({ spellName, frequency, detail, spellData }) => {
+      const level = spellData ? (spellData.level === 0 ? 'Cantrip' : `Level ${spellData.level}`) : '';
+      const school = spellData ? getSchoolName(spellData.school) : '';
+      const castingTime = spellData ? spellData.castingTime : '';
+      const range = spellData ? spellData.range : '';
+      const duration = spellData ? spellData.duration : '';
+      const desc = spellData ? spellData.desc : '';
+      const detailStr = detail ? ` <em class="sb-spell-detail">${detail}</em>` : '';
+
+      html += `<div class="sb-spell-row">
+          <div class="sb-spell-row-header">
+            <span class="sb-spell-name">${spellName}</span>${detailStr}
+            <span class="sb-spell-freq">${frequency}</span>
+          </div>`;
+
+      if (spellData) {
+        html += `<div class="sb-spell-meta">`;
+        if (level) html += `<span class="sb-spell-tag">${level}</span>`;
+        if (school) html += `<span class="sb-spell-tag">${school}</span>`;
+        if (castingTime) html += `<span class="sb-spell-tag">⏱ ${castingTime}</span>`;
+        if (range) html += `<span class="sb-spell-tag">📏 ${range}</span>`;
+        if (duration) html += `<span class="sb-spell-tag">⌛ ${duration}</span>`;
+        html += `</div>`;
+        if (desc) html += `<div class="sb-spell-desc">${desc}</div>`;
+      }
+
+      html += `</div>`;
     });
 
     html += `</div>
