@@ -761,6 +761,7 @@ export function updateTokenInfoPanel(token) {
   if (spellsSection && spellListEl) {
     spellListEl.replaceChildren();
     const spells = token.monsterData ? parseMonsterSpells(token.monsterData) : [];
+    const schoolNames = { A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment', I: 'Illusion', N: 'Necromancy', T: 'Transmutation', V: 'Evocation' };
     if (spells.length > 0) {
       spells.forEach(sp => {
         const row = document.createElement('div');
@@ -802,9 +803,8 @@ export function updateTokenInfoPanel(token) {
         metaDiv.className = 'sb-spell-meta';
         if (sp.spellData) {
           const levelText = sp.spellData.level === 0 ? 'Cantrip' : `Level ${sp.spellData.level}`;
-          const schoolNames = { A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment', I: 'Illusion', N: 'Necromancy', T: 'Transmutation', V: 'Evocation' };
           const schoolText = schoolNames[sp.spellData.school] || sp.spellData.school;
-          [levelText, schoolText, sp.spellData.castingTime, sp.spellData.range].forEach(text => {
+          [levelText, schoolText, sp.spellData.castingTime, sp.spellData.range].filter(Boolean).forEach(text => {
             const tag = document.createElement('span');
             tag.className = 'sb-spell-tag';
             tag.textContent = text;
