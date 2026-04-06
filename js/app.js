@@ -438,8 +438,10 @@ function setupTokenInfoPanel() {
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
         const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
 
-        // Apply damage to target if one is selected and the attack hit
-        const attackHit = !attackRow?.dataset.attackHit || attackRow.dataset.attackHit === 'true';
+        // Apply damage to target if one is selected and the attack hit.
+        // Empty/unset attackHit means no ATK roll was made (e.g. AoE), which always deals damage.
+        const attackHitData = attackRow?.dataset.attackHit;
+        const attackHit = !attackHitData || attackHitData === 'true';
         if (attackRow) attackRow.dataset.attackHit = '';
 
         let resistNote = '';
@@ -1125,7 +1127,7 @@ function populateTargetSelect(currentToken) {
     select.appendChild(opt);
   }
   // Restore previous selection if still valid
-  if (prevValue && select.querySelector(`option[value="${prevValue}"]`)) {
+  if (prevValue && Array.from(select.options).some(o => o.value === prevValue)) {
     select.value = prevValue;
   }
 }
@@ -1143,17 +1145,17 @@ function getSelectedTargetToken() {
 /**
  * Extract flat damage type strings from a token's monsterData resist/immune arrays.
  * @param {Array} arr - e.g. ['fire', {resist:['bludgeoning'], note:'...'}]
- * @param {string} key - 'resist' or 'immune'
+ * @param {string} propertyName - 'resist' or 'immune'
  * @returns {string[]}
  */
-function flattenDamageTypes(arr, key) {
+function flattenDamageTypes(arr, propertyName) {
   if (!Array.isArray(arr)) return [];
   const types = [];
   for (const entry of arr) {
     if (typeof entry === 'string') {
       types.push(entry.toLowerCase());
     } else if (typeof entry === 'object' && entry !== null) {
-      const inner = entry[key];
+      const inner = entry[propertyName];
       if (Array.isArray(inner)) {
         inner.forEach(t => types.push(String(t).toLowerCase()));
       }
