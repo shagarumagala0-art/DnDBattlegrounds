@@ -317,7 +317,7 @@ function formatMod(mod) {
  * Return an array of attacks for a player character in the same format
  * used by parseMonsterAttacks() so the token info panel can render them.
  * @param {Object} charData
- * @returns {Array<{name:string, isAoe:boolean, hitBonus:number|null, damageDice:string[]}>}
+ * @returns {Array<{name:string, isAoe:boolean, hitBonus:number|null, damageDice:string[], damageTypes:string[]}>}
  */
 export function getCharacterAttacks(charData) {
   if (!charData) return [];
@@ -326,6 +326,7 @@ export function getCharacterAttacks(charData) {
     isAoe: !!(atk.isAoe),
     hitBonus: atk.isAoe ? null : (atk.hitBonus ?? 0),
     damageDice: Array.isArray(atk.damageDice) ? atk.damageDice : [String(atk.damageDice || '1d4')],
+    damageTypes: Array.isArray(atk.damageTypes) ? atk.damageTypes : [],
   }));
 }
 

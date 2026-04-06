@@ -366,6 +366,15 @@ function setupTokenInfoPanel() {
         const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Attack';
         const resultEl = attackRow?.querySelector('.sb-row-atk-result');
+
+        // Check if the roll hits the target's AC
+        const targetToken = getSelectedTargetToken();
+        const targetAc = targetToken ? (targetToken.ac || 10) : null;
+        const hits = targetToken ? (isCrit || total >= targetAc) : null;
+        if (attackRow && targetToken) {
+          attackRow.dataset.attackHit = hits ? 'true' : 'false';
+        }
+
         if (resultEl) {
           const boldName = document.createElement('strong');
           boldName.textContent = name;
@@ -376,6 +385,11 @@ function setupTokenInfoPanel() {
             critSpan.textContent = ' CRITICAL HIT!';
             critSpan.style.color = 'var(--gold-accent, gold)';
             resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal, critSpan);
+          } else if (targetToken) {
+            const hitSpan = document.createElement('span');
+            hitSpan.textContent = hits ? ` HIT (AC ${targetAc})` : ` MISS (AC ${targetAc})`;
+            hitSpan.style.color = hits ? 'var(--hp-full, #2ecc71)' : 'var(--text-dim, #6e6555)';
+            resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal, hitSpan);
           } else {
             resultEl.replaceChildren(`⚔️ `, boldName, `: d20(${d20})${bonusStr} = `, boldTotal);
           }
@@ -390,16 +404,67 @@ function setupTokenInfoPanel() {
         const isCrit = attackRow?.dataset.critical === 'true';
         if (attackRow) attackRow.dataset.critical = '';
         const damageParts = dmgBtn.dataset.damage.split('|');
+        const damageTypesParts = (dmgBtn.dataset.damageTypes || '').split('|');
+
+        // Roll each damage part once and compute resist/immune-adjusted totals
+        const targetToken = getSelectedTargetToken();
+        const m = targetToken?.monsterData;
+        const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
+        const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
+
         let totalDmg = 0;
+        let appliedDmg = 0;
         const rolls = [];
-        damageParts.forEach(dice => {
+        damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
-          const result = rollDice(effectiveDice);
-          totalDmg += result;
-          rolls.push(`${effectiveDice}(${result})`);
+          const raw = rollDice(effectiveDice);
+          totalDmg += raw;
+          rolls.push(`${effectiveDice}(${raw})`);
+
+          const dmgType = (damageTypesParts[idx] || '').toLowerCase();
+          if (targetToken) {
+            if (dmgType && immuneTypes.includes(dmgType)) {
+              // immune: contributes 0
+            } else if (dmgType && resistTypes.includes(dmgType)) {
+              appliedDmg += Math.floor(raw / 2);
+            } else {
+              appliedDmg += raw;
+            }
+          } else {
+            appliedDmg += raw;
+          }
         });
+
         const name = attackRow?.querySelector('.sb-attack-name')?.textContent || 'Damage';
         const resultEl = attackRow?.querySelector('.sb-row-dmg-result');
+
+        // Apply damage to target if one is selected and the attack hit.
+        // Empty/unset attackHit means no ATK roll was made (e.g. AoE), which always deals damage.
+        const attackHitData = attackRow?.dataset.attackHit;
+        const attackHit = !attackHitData || attackHitData === 'true';
+        if (attackRow) attackRow.dataset.attackHit = '';
+
+        let resistNote = '';
+        if (targetToken && attackHit) {
+          const dmgChange = changeTokenHp(targetToken.id, -appliedDmg);
+          if (dmgChange) {
+            renderTokens();
+            if (targetToken === state.selectedToken) {
+              updateTokenInfoPanel(targetToken);
+            } else {
+              // Refresh the target dropdown HP display
+              populateTargetSelect(state.selectedToken);
+            }
+          }
+          if (appliedDmg === 0 && totalDmg > 0) {
+            resistNote = ' → 0 (IMMUNE)';
+          } else if (appliedDmg < totalDmg) {
+            resistNote = ` → ${appliedDmg} (RESIST)`;
+          }
+          const toastType = appliedDmg === 0 ? 'info' : 'warning';
+          showToast(`💥 ${targetToken.name} takes ${appliedDmg} damage (${targetToken.hp}/${targetToken.maxHp} HP)`, toastType, 2500);
+        }
+
         if (resultEl) {
           const boldName = document.createElement('strong');
           boldName.textContent = name;
@@ -407,9 +472,14 @@ function setupTokenInfoPanel() {
           boldTotal.textContent = String(totalDmg);
           if (isCrit) {
             const critSpan = document.createElement('span');
-            critSpan.textContent = ' (Critical!)';
+            critSpan.textContent = ' (Critical!)' + resistNote;
             critSpan.style.color = 'var(--gold-accent, gold)';
             resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+          } else if (resistNote) {
+            const noteSpan = document.createElement('span');
+            noteSpan.textContent = resistNote;
+            noteSpan.style.color = 'var(--text-secondary)';
+            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, noteSpan);
           } else {
             resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
           }
@@ -566,6 +636,7 @@ export function updateTokenInfoPanel(token) {
         const dmgBtn = document.createElement('button');
         dmgBtn.className = 'sb-atk-btn sb-dmg-roll-btn';
         dmgBtn.dataset.damage = atk.damageDice.join('|');
+        dmgBtn.dataset.damageTypes = (atk.damageTypes || []).join('|');
         dmgBtn.title = `${displayName}: damage`;
         const dmgLabel = document.createElement('span');
         dmgLabel.className = 'sb-atk-label';
@@ -595,6 +666,8 @@ export function updateTokenInfoPanel(token) {
         attackListEl.appendChild(row);
       });
       attackSection.classList.remove('hidden');
+      // Populate target dropdown with other arena tokens
+      populateTargetSelect(token);
     } else {
       attackSection.classList.add('hidden');
     }
@@ -1031,4 +1104,62 @@ function doubleDiceNotation(notation) {
   const match = str.match(/^(\d+)d(\d+)([+-]\d+)?$/);
   if (!match) return notation;
   return `${parseInt(match[1]) * 2}d${match[2]}${match[3] || ''}`;
+}
+
+/**
+ * Populate the target dropdown with all arena tokens except the current attacker.
+ * @param {Object} currentToken - The attacker token
+ */
+function populateTargetSelect(currentToken) {
+  const select = document.getElementById('target-token-select');
+  if (!select) return;
+  const prevValue = select.value;
+  select.replaceChildren();
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = '— none —';
+  select.appendChild(none);
+  for (const token of state.tokens) {
+    if (token.id === currentToken.id) continue;
+    const opt = document.createElement('option');
+    opt.value = token.id;
+    opt.textContent = `${token.name} (${token.hp}/${token.maxHp} HP)`;
+    select.appendChild(opt);
+  }
+  // Restore previous selection if still valid
+  if (prevValue && Array.from(select.options).some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  }
+}
+
+/**
+ * Return the currently selected target token (or null if none selected).
+ * @returns {Object|null}
+ */
+function getSelectedTargetToken() {
+  const select = document.getElementById('target-token-select');
+  if (!select || !select.value) return null;
+  return findToken(select.value) || null;
+}
+
+/**
+ * Extract flat damage type strings from a token's monsterData resist/immune arrays.
+ * @param {Array} arr - e.g. ['fire', {resist:['bludgeoning'], note:'...'}]
+ * @param {string} propertyName - 'resist' or 'immune'
+ * @returns {string[]}
+ */
+function flattenDamageTypes(arr, propertyName) {
+  if (!Array.isArray(arr)) return [];
+  const types = [];
+  for (const entry of arr) {
+    if (typeof entry === 'string') {
+      types.push(entry.toLowerCase());
+    } else if (typeof entry === 'object' && entry !== null) {
+      const inner = entry[propertyName];
+      if (Array.isArray(inner)) {
+        inner.forEach(t => types.push(String(t).toLowerCase()));
+      }
+    }
+  }
+  return types;
 }
