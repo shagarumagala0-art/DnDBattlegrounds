@@ -5,7 +5,7 @@
 import { state, changeTokenHp, setTokenHp, findToken } from './state.js';
 import {
   initGrid, addTokenToGrid, removeTokenFromGrid, renderTokens,
-  deselectToken, clearGrid, onTokenSelect, onTokenDeselect
+  deselectToken, clearGrid, onTokenSelect, onTokenDeselect, selectTokenById
 } from './grid.js';
 import { loadBestiaries, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupOverlays();
   setupTokenInfoPanel();
   setupCharacterSheetOverlay();
+  setupOverviewTab();
 
   // Load monster data
   await loadBestiaries();
@@ -42,6 +43,8 @@ function setupMobileViewport() {
     if (e.target.closest('.overlay-content')) return; // allow overlay scroll
     if (e.target.closest('#monster-results')) return; // allow monster list scroll
     if (e.target.closest('#tab-characters')) return; // allow characters tab scroll
+    if (e.target.closest('#token-info-panel')) return; // allow token info panel scroll
+    if (e.target.closest('#tab-overview')) return; // allow overview tab scroll
     e.preventDefault();
   }, { passive: false });
 
@@ -75,6 +78,9 @@ function setupTabs() {
       }
       if (tab === 'characters') {
         renderCharacterList();
+      }
+      if (tab === 'overview') {
+        renderOverview();
       }
     });
   });
@@ -121,6 +127,99 @@ function setupArenaToolbar() {
       showToast('🗑️ Arena cleared', 'info');
     }
   });
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+
+function setupOverviewTab() {
+  // Event delegation: clicking an overview row selects the token on the arena
+  const listEl = document.getElementById('overview-list');
+  if (!listEl) return;
+
+  listEl.addEventListener('click', (e) => {
+    const row = e.target.closest('.overview-token-row');
+    if (!row) return;
+    const tokenId = row.dataset.tokenId;
+    if (!tokenId) return;
+
+    // Switch to arena tab and select the token to open the combat view
+    switchTab('arena');
+    selectTokenById(tokenId);
+  });
+}
+
+/**
+ * Render (or refresh) the overview list.
+ * Tokens are sorted by initiative (highest first; not-rolled tokens go last).
+ */
+function renderOverview() {
+  const listEl = document.getElementById('overview-list');
+  if (!listEl) return;
+
+  listEl.replaceChildren();
+
+  if (state.tokens.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'overview-empty';
+    empty.innerHTML = `
+      <div class="empty-icon">⚔️</div>
+      <p>No tokens on the arena yet.</p>
+      <p>Add monsters or players from the other tabs.</p>
+    `;
+    listEl.appendChild(empty);
+    return;
+  }
+
+  // Sort: tokens with initiative first (highest → lowest), then unrolled tokens
+  const sorted = [...state.tokens].sort((a, b) => {
+    const aHas = a.initiative !== null && a.initiative !== undefined;
+    const bHas = b.initiative !== null && b.initiative !== undefined;
+    if (aHas && bHas) return b.initiative - a.initiative;
+    if (aHas) return -1;
+    if (bHas) return 1;
+    return 0;
+  });
+
+  for (const token of sorted) {
+    const row = document.createElement('div');
+    row.className = 'overview-token-row';
+    row.dataset.tokenId = token.id;
+
+    // Initiative badge
+    const initEl = document.createElement('div');
+    const hasInit = token.initiative !== null && token.initiative !== undefined;
+    initEl.className = 'overview-initiative' + (hasInit ? '' : ' not-rolled');
+    initEl.textContent = hasInit ? token.initiative : '—';
+
+    // Token badge (colored circle with abbreviation)
+    const badge = document.createElement('div');
+    badge.className = `token-badge token-badge-${token.type}`;
+    badge.textContent = token.abbr;
+
+    // Info section (name + hp)
+    const info = document.createElement('div');
+    info.className = 'overview-token-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'overview-token-name';
+    nameEl.textContent = token.name;
+
+    const hpEl = document.createElement('div');
+    hpEl.className = 'overview-token-hp';
+    hpEl.textContent = `HP: ${token.hp} / ${token.maxHp}`;
+
+    const hpBarWrap = document.createElement('div');
+    hpBarWrap.className = 'overview-hp-bar';
+    const hpFill = document.createElement('div');
+    hpFill.className = `overview-hp-fill ${getHpColorClass(token.hp, token.maxHp)}`;
+    const pct = token.maxHp > 0 ? Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100)) : 0;
+    hpFill.style.width = `${pct}%`;
+    hpBarWrap.appendChild(hpFill);
+
+    info.append(nameEl, hpEl, hpBarWrap);
+    row.append(initEl, badge, info);
+    listEl.appendChild(row);
+  }
 }
 
 // ─── Token Info Panel ─────────────────────────────────────────────────────────
