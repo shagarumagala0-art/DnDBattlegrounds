@@ -1884,6 +1884,52 @@ body::before {
   line-height: 1.45;
 }
 
+/* Spell cast button */
+.sb-spell-cast-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  font-family: inherit;
+  color: inherit;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.sb-spell-cast-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--player-blue);
+}
+
+.sb-spell-cast-btn:active {
+  background: var(--player-blue-dk);
+  border-color: var(--player-blue);
+}
+
+.sb-spell-cast-btn .sb-atk-label {
+  color: var(--player-blue);
+}
+
+/* Spell cast result */
+.sb-spell-result {
+  font-size: 11px;
+  padding: 0;
+  color: var(--text-secondary);
+  transition: padding var(--transition);
+}
+
+.sb-spell-result:not(:empty) {
+  padding: 2px 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+}
+
 /* Modal sheet */
 .modal-sheet .modal-body {
   padding: 16px 20px;
