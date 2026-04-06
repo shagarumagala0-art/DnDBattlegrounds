@@ -1,8 +1,8 @@
 import { state, findTokenAtCell, removeToken } from './state.js';
 import { getHpColorClass } from './utils.js';
 
-const GRID_ROWS = 20;
-const GRID_COLS = 20;
+let GRID_ROWS = 20;
+let GRID_COLS = 20;
 
 let gridEl = null;
 
@@ -38,6 +38,16 @@ export function initGrid(container) {
   // Row/col count attributes for CSS
   gridEl.style.setProperty('--grid-cols', GRID_COLS);
 
+  buildGridCells();
+
+  container.appendChild(gridEl);
+}
+
+/**
+ * Build (or rebuild) all grid cells inside gridEl.
+ * Assumes gridEl is already created and GRID_ROWS/GRID_COLS are set.
+ */
+function buildGridCells() {
   for (let r = 0; r < GRID_ROWS; r++) {
     for (let c = 0; c < GRID_COLS; c++) {
       const cell = document.createElement('div');
@@ -62,8 +72,41 @@ export function initGrid(container) {
       gridEl.appendChild(cell);
     }
   }
+}
 
-  container.appendChild(gridEl);
+/**
+ * Resize the battle grid to new dimensions and re-render all tokens.
+ * Tokens that fall outside the new bounds are clamped to the nearest valid cell.
+ * @param {number} rows
+ * @param {number} cols
+ */
+export function resizeGrid(rows, cols) {
+  GRID_ROWS = rows;
+  GRID_COLS = cols;
+
+  if (!gridEl) return;
+
+  // Remove all existing cells
+  gridEl.innerHTML = '';
+  gridEl.style.setProperty('--grid-cols', GRID_COLS);
+
+  buildGridCells();
+
+  // Clamp any out-of-bounds tokens
+  for (const token of state.tokens) {
+    token.row = Math.min(token.row, GRID_ROWS - 1);
+    token.col = Math.min(token.col, GRID_COLS - 1);
+  }
+
+  renderTokens();
+}
+
+/**
+ * Get current grid dimensions
+ * @returns {{rows: number, cols: number}}
+ */
+export function getGridSize() {
+  return { rows: GRID_ROWS, cols: GRID_COLS };
 }
 
 /**
