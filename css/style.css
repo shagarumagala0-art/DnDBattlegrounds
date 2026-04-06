@@ -1083,6 +1083,116 @@ body::before {
 #tab-characters::-webkit-scrollbar { width: 4px; }
 #tab-characters::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+/* ── Overview Tab ────────────────────────────────────────── */
+#tab-overview {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#tab-overview::-webkit-scrollbar { width: 4px; }
+#tab-overview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.overview-header {
+  padding: 14px 14px 6px;
+  flex-shrink: 0;
+}
+
+#overview-list {
+  padding: 4px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overview-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+}
+
+.overview-empty .empty-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.overview-empty p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.overview-token-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.overview-token-row:hover {
+  background: var(--bg-hover);
+  border-color: var(--gold-dark);
+}
+
+.overview-token-row:active {
+  background: var(--bg-panel);
+  transform: scale(0.98);
+}
+
+.overview-initiative {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.overview-initiative.not-rolled {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.overview-token-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.overview-token-name {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-token-hp {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.overview-hp-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.overview-hp-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
 .dicecloud-import {
   background: var(--bg-card);
   border: 1px solid var(--border-card);

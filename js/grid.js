@@ -227,6 +227,18 @@ export function updateTokenElement(tokenId) {
 }
 
 /**
+ * Select a token by its ID (triggers the onTokenSelect callback)
+ * @param {string} id
+ */
+export function selectTokenById(id) {
+  const token = state.tokens.find(t => t.id === id);
+  if (!token) return;
+  state.selectedToken = token;
+  renderTokens();
+  if (onTokenSelectCb) onTokenSelectCb(token);
+}
+
+/**
  * Clear all tokens from the grid
  */
 export function clearGrid() {

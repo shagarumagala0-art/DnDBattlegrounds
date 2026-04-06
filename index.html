@@ -26,6 +26,7 @@
     <!-- ── Tab Navigation ────────────────────────────────── -->
     <nav id="tab-nav">
       <button class="tab-btn active" data-tab="arena">⚔️ Arena</button>
+      <button class="tab-btn" data-tab="overview">📋 Overview</button>
       <button class="tab-btn" data-tab="monsters">🐉 Monsters</button>
       <button class="tab-btn" data-tab="characters">👤 Party</button>
     </nav>
@@ -157,6 +158,17 @@
         </div>
       </div>
 
+    </section>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- Overview Tab                                       -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <section id="tab-overview" class="tab-content">
+      <div class="overview-header">
+        <h3 class="section-title">📋 Combat Overview</h3>
+        <p class="section-desc">All tokens sorted by Initiative (highest first). Tap a row to open combat view.</p>
+      </div>
+      <div id="overview-list"></div>
     </section>
 
     <!-- ══════════════════════════════════════════════════ -->
