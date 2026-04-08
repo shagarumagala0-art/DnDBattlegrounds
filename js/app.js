@@ -459,27 +459,14 @@ function setupTokenInfoPanel() {
         const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
 
         // Saving throw check (AoE / DC abilities): roll before applying damage
-        const saveDc = dmgBtn.dataset.saveDc ? parseInt(dmgBtn.dataset.saveDc, 10) : null;
-        const saveAbility = dmgBtn.dataset.saveAbility || null;
-        const ABILITY_LABEL = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
-        let saveInfo = null;
-        if (saveDc !== null && saveAbility && targetToken) {
-          const saveMod = getTokenSaveMod(targetToken, saveAbility);
-          const d20 = Math.floor(Math.random() * 20) + 1;
-          const saveTotal = d20 + saveMod;
-          const saveModStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
-          const savePassed = saveTotal >= saveDc;
-          saveInfo = {
-            label: ABILITY_LABEL[saveAbility] || saveAbility.toUpperCase(),
-            saveModStr, d20, saveTotal, saveDc, savePassed,
-          };
-        }
+        const saveInfo = rollSavingThrow(dmgBtn, targetToken);
         // saveMultiplier: 0.5 if target passed the save, 1 otherwise
         const saveMultiplier = saveInfo?.savePassed ? 0.5 : 1;
 
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
+        const dmgTypesLower = (dmgBtn.dataset.damageTypes || '').toLowerCase();
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const raw = rollDice(effectiveDice);
@@ -527,7 +514,7 @@ function setupTokenInfoPanel() {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
             resistNote = ` → ${appliedDmg}`;
-            if (saveInfo?.savePassed && resistTypes.some(t => (dmgBtn.dataset.damageTypes || '').toLowerCase().includes(t))) {
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesLower.includes(t))) {
               resistNote += ' (SAVED+RESIST)';
             } else if (saveInfo?.savePassed) {
               resistNote += ' (SAVED, half dmg)';
@@ -1198,27 +1185,14 @@ function setupCharacterSheetOverlay() {
         const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
 
         // Saving throw check (AoE / DC abilities): roll before applying damage
-        const saveDc = dmgBtn.dataset.saveDc ? parseInt(dmgBtn.dataset.saveDc, 10) : null;
-        const saveAbility = dmgBtn.dataset.saveAbility || null;
-        const ABILITY_LABEL = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
-        let saveInfo = null;
-        if (saveDc !== null && saveAbility && targetToken) {
-          const saveMod = getTokenSaveMod(targetToken, saveAbility);
-          const d20 = Math.floor(Math.random() * 20) + 1;
-          const saveTotal = d20 + saveMod;
-          const saveModStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
-          const savePassed = saveTotal >= saveDc;
-          saveInfo = {
-            label: ABILITY_LABEL[saveAbility] || saveAbility.toUpperCase(),
-            saveModStr, d20, saveTotal, saveDc, savePassed,
-          };
-        }
+        const saveInfo = rollSavingThrow(dmgBtn, targetToken);
         // saveMultiplier: 0.5 if target passed the save, 1 otherwise
         const saveMultiplier = saveInfo?.savePassed ? 0.5 : 1;
 
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
+        const dmgTypesLower = (dmgBtn.dataset.damageTypes || '').toLowerCase();
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const result = rollDice(effectiveDice);
@@ -1263,7 +1237,7 @@ function setupCharacterSheetOverlay() {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
             resistNote = ` → ${appliedDmg}`;
-            if (saveInfo?.savePassed && resistTypes.some(t => (dmgBtn.dataset.damageTypes || '').toLowerCase().includes(t))) {
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesLower.includes(t))) {
               resistNote += ' (SAVED+RESIST)';
             } else if (saveInfo?.savePassed) {
               resistNote += ' (SAVED, half dmg)';
@@ -1484,4 +1458,32 @@ function getTokenSaveMod(token, ability) {
   }
   // Default: raw ability modifier
   return getModifier(token[ability] || 10);
+}
+
+/** Ability key → display label */
+const SAVE_ABILITY_LABEL = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
+
+/**
+ * Roll a saving throw for a target token against a DC ability.
+ * Returns save info if both saveDc and saveAbility are set and a target exists,
+ * or null if the attack has no save (normal attack) or there is no target.
+ *
+ * @param {HTMLElement} dmgBtn - The clicked DMG button (provides data-save-dc / data-save-ability)
+ * @param {Object|null} targetToken
+ * @returns {{ label: string, saveModStr: string, d20: number, saveTotal: number, saveDc: number, savePassed: boolean }|null}
+ */
+function rollSavingThrow(dmgBtn, targetToken) {
+  const saveDc = dmgBtn.dataset.saveDc ? parseInt(dmgBtn.dataset.saveDc, 10) : null;
+  const saveAbility = dmgBtn.dataset.saveAbility || null;
+  if (saveDc === null || !saveAbility || !targetToken) return null;
+
+  const saveMod = getTokenSaveMod(targetToken, saveAbility);
+  const d20 = Math.floor(Math.random() * 20) + 1;
+  const saveTotal = d20 + saveMod;
+  const saveModStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
+  return {
+    label: SAVE_ABILITY_LABEL[saveAbility] || saveAbility.toUpperCase(),
+    saveModStr, d20, saveTotal, saveDc,
+    savePassed: saveTotal >= saveDc,
+  };
 }
