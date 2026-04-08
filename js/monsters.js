@@ -387,6 +387,7 @@ function getMonsterSaveBonus(monster, ability) {
  * @returns {string}
  */
 function extractEntryText(entries) {
+  if (!Array.isArray(entries)) return '';
   return entries.map(e => {
     if (typeof e === 'string') return e;
     if (e && typeof e === 'object') {
@@ -674,29 +675,30 @@ export function parseStatblock(monster) {
 
     attacks.forEach(atk => {
       const displayName = cleanActionName(atk.name);
+      const safeTitle = displayName.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const damageSummary = atk.damageDice.map((dice, i) => {
         const type = (atk.damageTypes || [])[i];
         return type ? `${dice} ${type}` : dice;
       }).join(' + ');
       html += `<div class="sb-attack-row">
           <div class="sb-attack-row-header">
-            <span class="sb-attack-name" title="${displayName}">${displayName}</span>
+            <span class="sb-attack-name" title="${safeTitle}">${displayName}</span>
             <div class="sb-attack-btns">`;
 
       if (!atk.isAoe) {
         const bonusStr = formatModifier(atk.hitBonus);
-        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${displayName}: to hit">
+        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${safeTitle}: to hit">
                 <span class="sb-atk-label">ATK</span>
                 <span class="sb-atk-val">${bonusStr}</span>
               </button>`;
-      } else if (atk.saveDc !== null) {
-        html += `<span class="sb-atk-btn sb-dc-badge" title="${displayName}: saving throw DC">
+      } else if (atk.isAoe && atk.saveDc !== null) {
+        html += `<span class="sb-atk-btn sb-dc-badge" title="${safeTitle}: saving throw DC">
                 <span class="sb-atk-label">DC</span>
                 <span class="sb-atk-val">${atk.saveDc}</span>
               </span>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${displayName}: ${damageSummary}">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${safeTitle}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
               <span class="sb-atk-val">${damageSummary}</span>
             </button>`;

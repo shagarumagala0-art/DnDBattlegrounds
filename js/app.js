@@ -709,7 +709,7 @@ export function updateTokenInfoPanel(token) {
           atkVal.textContent = formatModifier(atk.hitBonus);
           atkBtn.append(atkLabel, atkVal);
           btnsDiv.appendChild(atkBtn);
-        } else if (atk.saveDc !== null) {
+        } else if (atk.isAoe && atk.saveDc !== null) {
           const dcBadge = document.createElement('span');
           dcBadge.className = 'sb-atk-btn sb-dc-badge';
           dcBadge.title = `${displayName}: saving throw DC`;
