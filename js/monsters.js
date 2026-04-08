@@ -379,12 +379,34 @@ function getMonsterSaveBonus(monster, ability) {
 }
 
 /**
+ * Recursively extract all plain-text content from a 5etools-style entries array,
+ * including nested objects with their own entries/items arrays (e.g. list items
+ * inside a breath-weapon action).
+ *
+ * @param {Array} entries
+ * @returns {string}
+ */
+function extractEntryText(entries) {
+  return entries.map(e => {
+    if (typeof e === 'string') return e;
+    if (e && typeof e === 'object') {
+      const parts = [];
+      if (Array.isArray(e.entries)) parts.push(extractEntryText(e.entries));
+      if (Array.isArray(e.items)) parts.push(extractEntryText(e.items));
+      return parts.join(' ');
+    }
+    return '';
+  }).join(' ');
+}
+
+/**
  * Extract attack information from a monster's action list.
  * Actions with {@hit N} get an attack roll + damage roll.
  * Actions with {@damage} but no {@hit} (AOE / save-based) get damage roll only.
+ * For AOE actions, the first {@dc N} found in the action text is captured as saveDc.
  *
  * @param {Object} monster
- * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[], damageTypes: string[]}>}
+ * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, saveDc: number|null, damageDice: string[], damageTypes: string[]}>}
  */
 export function parseMonsterAttacks(monster) {
   const attacks = [];
@@ -412,14 +434,20 @@ export function parseMonsterAttacks(monster) {
         name: action.name,
         isAoe: false,
         hitBonus: parseInt(hitMatch[1], 10),
+        saveDc: null,
         damageDice,
         damageTypes,
       });
     } else {
+      // Search the full nested text for a saving throw DC
+      const allText = extractEntryText(entries);
+      const dcMatch = allText.match(/\{@dc\s+(\d+)\}/);
+      const saveDc = dcMatch ? parseInt(dcMatch[1], 10) : null;
       attacks.push({
         name: action.name,
         isAoe: true,
         hitBonus: null,
+        saveDc,
         damageDice,
         damageTypes,
       });
@@ -661,6 +689,11 @@ export function parseStatblock(monster) {
                 <span class="sb-atk-label">ATK</span>
                 <span class="sb-atk-val">${bonusStr}</span>
               </button>`;
+      } else if (atk.saveDc !== null) {
+        html += `<span class="sb-atk-btn sb-dc-badge" title="${displayName}: saving throw DC">
+                <span class="sb-atk-label">DC</span>
+                <span class="sb-atk-val">${atk.saveDc}</span>
+              </span>`;
       }
 
       html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${displayName}: ${damageSummary}">
