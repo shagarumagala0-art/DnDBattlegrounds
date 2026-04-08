@@ -466,7 +466,7 @@ function setupTokenInfoPanel() {
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
-        const dmgTypesLower = (dmgBtn.dataset.damageTypes || '').toLowerCase();
+        const dmgTypesArray = (dmgBtn.dataset.damageTypes || '').toLowerCase().split('|').filter(Boolean);
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const raw = rollDice(effectiveDice);
@@ -514,7 +514,7 @@ function setupTokenInfoPanel() {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
             resistNote = ` → ${appliedDmg}`;
-            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesLower.includes(t))) {
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesArray.includes(t))) {
               resistNote += ' (SAVED+RESIST)';
             } else if (saveInfo?.savePassed) {
               resistNote += ' (SAVED, half dmg)';
@@ -1192,7 +1192,7 @@ function setupCharacterSheetOverlay() {
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
-        const dmgTypesLower = (dmgBtn.dataset.damageTypes || '').toLowerCase();
+        const dmgTypesArray = (dmgBtn.dataset.damageTypes || '').toLowerCase().split('|').filter(Boolean);
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const result = rollDice(effectiveDice);
@@ -1237,7 +1237,7 @@ function setupCharacterSheetOverlay() {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
             resistNote = ` → ${appliedDmg}`;
-            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesLower.includes(t))) {
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesArray.includes(t))) {
               resistNote += ' (SAVED+RESIST)';
             } else if (saveInfo?.savePassed) {
               resistNote += ' (SAVED, half dmg)';
@@ -1447,6 +1447,7 @@ function getTokenSaveMod(token, ability) {
   if (token.monsterData?.save?.[ability] !== undefined) {
     const parsed = parseInt(token.monsterData.save[ability], 10);
     if (!isNaN(parsed)) return parsed;
+    console.warn(`[combat] Could not parse save bonus for ${ability}: "${token.monsterData.save[ability]}"; using ability modifier instead.`);
   }
   // Characters: add proficiency bonus when proficient in this save
   if (token.characterData) {
