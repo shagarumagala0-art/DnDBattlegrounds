@@ -709,6 +709,18 @@ export function updateTokenInfoPanel(token) {
           atkVal.textContent = formatModifier(atk.hitBonus);
           atkBtn.append(atkLabel, atkVal);
           btnsDiv.appendChild(atkBtn);
+        } else if (atk.isAoe && atk.saveDc !== null) {
+          const dcBadge = document.createElement('span');
+          dcBadge.className = 'sb-atk-btn sb-dc-badge';
+          dcBadge.title = `${displayName}: saving throw DC`;
+          const dcLabel = document.createElement('span');
+          dcLabel.className = 'sb-atk-label';
+          dcLabel.textContent = 'DC';
+          const dcVal = document.createElement('span');
+          dcVal.className = 'sb-atk-val';
+          dcVal.textContent = atk.saveDc;
+          dcBadge.append(dcLabel, dcVal);
+          btnsDiv.appendChild(dcBadge);
         }
 
         const dmgBtn = document.createElement('button');

@@ -1749,6 +1749,14 @@ body::before {
   border-color: var(--crimson);
 }
 
+.sb-dc-badge {
+  cursor: default;
+}
+
+.sb-dc-badge .sb-atk-label {
+  color: var(--gold);
+}
+
 .sb-atk-label {
   font-size: 9px;
   font-weight: 800;

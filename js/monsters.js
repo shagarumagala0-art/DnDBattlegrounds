@@ -379,12 +379,35 @@ function getMonsterSaveBonus(monster, ability) {
 }
 
 /**
+ * Recursively extract all plain-text content from a 5etools-style entries array,
+ * including nested objects with their own entries/items arrays (e.g. list items
+ * inside a breath-weapon action).
+ *
+ * @param {Array} entries
+ * @returns {string}
+ */
+function extractEntryText(entries) {
+  if (!Array.isArray(entries)) return '';
+  return entries.map(e => {
+    if (typeof e === 'string') return e;
+    if (e && typeof e === 'object') {
+      const parts = [];
+      if (Array.isArray(e.entries)) parts.push(extractEntryText(e.entries));
+      if (Array.isArray(e.items)) parts.push(extractEntryText(e.items));
+      return parts.join(' ');
+    }
+    return '';
+  }).join(' ');
+}
+
+/**
  * Extract attack information from a monster's action list.
  * Actions with {@hit N} get an attack roll + damage roll.
  * Actions with {@damage} but no {@hit} (AOE / save-based) get damage roll only.
+ * For AOE actions, the first {@dc N} found in the action text is captured as saveDc.
  *
  * @param {Object} monster
- * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, damageDice: string[], damageTypes: string[]}>}
+ * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, saveDc: number|null, damageDice: string[], damageTypes: string[]}>}
  */
 export function parseMonsterAttacks(monster) {
   const attacks = [];
@@ -412,14 +435,20 @@ export function parseMonsterAttacks(monster) {
         name: action.name,
         isAoe: false,
         hitBonus: parseInt(hitMatch[1], 10),
+        saveDc: null,
         damageDice,
         damageTypes,
       });
     } else {
+      // Search the full nested text for a saving throw DC
+      const allText = extractEntryText(entries);
+      const dcMatch = allText.match(/\{@dc\s+(\d+)\}/);
+      const saveDc = dcMatch ? parseInt(dcMatch[1], 10) : null;
       attacks.push({
         name: action.name,
         isAoe: true,
         hitBonus: null,
+        saveDc,
         damageDice,
         damageTypes,
       });
@@ -646,24 +675,30 @@ export function parseStatblock(monster) {
 
     attacks.forEach(atk => {
       const displayName = cleanActionName(atk.name);
+      const safeTitle = displayName.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const damageSummary = atk.damageDice.map((dice, i) => {
         const type = (atk.damageTypes || [])[i];
         return type ? `${dice} ${type}` : dice;
       }).join(' + ');
       html += `<div class="sb-attack-row">
           <div class="sb-attack-row-header">
-            <span class="sb-attack-name" title="${displayName}">${displayName}</span>
+            <span class="sb-attack-name" title="${safeTitle}">${displayName}</span>
             <div class="sb-attack-btns">`;
 
       if (!atk.isAoe) {
         const bonusStr = formatModifier(atk.hitBonus);
-        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${displayName}: to hit">
+        html += `<button class="sb-atk-btn sb-atk-roll-btn" data-bonus="${atk.hitBonus}" title="${safeTitle}: to hit">
                 <span class="sb-atk-label">ATK</span>
                 <span class="sb-atk-val">${bonusStr}</span>
               </button>`;
+      } else if (atk.isAoe && atk.saveDc !== null) {
+        html += `<span class="sb-atk-btn sb-dc-badge" title="${safeTitle}: saving throw DC">
+                <span class="sb-atk-label">DC</span>
+                <span class="sb-atk-val">${atk.saveDc}</span>
+              </span>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${displayName}: ${damageSummary}">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${safeTitle}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
               <span class="sb-atk-val">${damageSummary}</span>
             </button>`;
