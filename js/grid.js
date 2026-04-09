@@ -17,6 +17,130 @@ let draggedTokenId = null;
 let touchDragTokenId = null;
 let touchGhostEl = null;
 
+// Movement trail SVG overlay
+let movementTrailSvg = null;
+let movementTrailTimer = null;
+
+// Cell size and gap used to compute pixel centres
+const CELL_PX = 60;
+const CELL_GAP = 1;
+const CELL_STEP = CELL_PX + CELL_GAP; // 61px per cell
+
+/** Return the pixel centre of a grid cell (relative to gridEl). */
+function getCellCenter(row, col) {
+  return {
+    x: col * CELL_STEP + CELL_PX / 2,
+    y: row * CELL_STEP + CELL_PX / 2,
+  };
+}
+
+/**
+ * Create (or re-create) the SVG overlay used for movement trails.
+ * Must be called after gridEl has been populated with cells.
+ */
+function initMovementTrail() {
+  movementTrailSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  movementTrailSvg.classList.add('movement-trail-svg');
+  movementTrailSvg.setAttribute('aria-hidden', 'true');
+  gridEl.appendChild(movementTrailSvg);
+}
+
+/**
+ * Draw a dotted movement trail from one grid cell to another.
+ * Displays the straight-line distance (1 tile = 5 ft) as a label.
+ * The trail fades out after 3 seconds.
+ *
+ * @param {number} fromRow
+ * @param {number} fromCol
+ * @param {number} toRow
+ * @param {number} toCol
+ */
+function drawMovementTrail(fromRow, fromCol, toRow, toCol) {
+  if (!movementTrailSvg) return;
+  if (fromRow === toRow && fromCol === toCol) return;
+
+  // Cancel any pending fade timer
+  if (movementTrailTimer) {
+    clearTimeout(movementTrailTimer);
+    movementTrailTimer = null;
+  }
+
+  const from = getCellCenter(fromRow, fromCol);
+  const to   = getCellCenter(toRow, toCol);
+
+  const dr = toRow - fromRow;
+  const dc = toCol - fromCol;
+  const distanceFt = Math.round(Math.sqrt(dr * dr + dc * dc) * 5);
+
+  const mx = (from.x + to.x) / 2;
+  const my = (from.y + to.y) / 2;
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // Clear previous trail
+  movementTrailSvg.innerHTML = '';
+  movementTrailSvg.classList.remove('movement-trail-fading');
+
+  // Dashed line
+  const line = document.createElementNS(ns, 'line');
+  line.setAttribute('x1', from.x);
+  line.setAttribute('y1', from.y);
+  line.setAttribute('x2', to.x);
+  line.setAttribute('y2', to.y);
+  line.classList.add('movement-trail-line');
+
+  // Small circle at the origin (old position)
+  const circle = document.createElementNS(ns, 'circle');
+  circle.setAttribute('cx', from.x);
+  circle.setAttribute('cy', from.y);
+  circle.setAttribute('r', 6);
+  circle.classList.add('movement-trail-origin');
+
+  // Label background
+  const labelWidth = 44;
+  const labelHeight = 18;
+  const labelBg = document.createElementNS(ns, 'rect');
+  labelBg.setAttribute('x', mx - labelWidth / 2);
+  labelBg.setAttribute('y', my - labelHeight / 2);
+  labelBg.setAttribute('width', labelWidth);
+  labelBg.setAttribute('height', labelHeight);
+  labelBg.setAttribute('rx', 4);
+  labelBg.classList.add('movement-trail-label-bg');
+
+  // Distance label
+  const label = document.createElementNS(ns, 'text');
+  label.setAttribute('x', mx);
+  label.setAttribute('y', my);
+  label.classList.add('movement-trail-label');
+  label.textContent = `${distanceFt} ft`;
+
+  movementTrailSvg.append(line, circle, labelBg, label);
+
+  // Fade out after 3 seconds
+  movementTrailTimer = setTimeout(() => {
+    movementTrailSvg.classList.add('movement-trail-fading');
+    movementTrailTimer = setTimeout(() => {
+      movementTrailSvg.innerHTML = '';
+      movementTrailSvg.classList.remove('movement-trail-fading');
+      movementTrailTimer = null;
+    }, 500);
+  }, 3000);
+}
+
+/**
+ * Clear the movement trail immediately (e.g., when the grid is cleared).
+ */
+function clearMovementTrail() {
+  if (movementTrailTimer) {
+    clearTimeout(movementTrailTimer);
+    movementTrailTimer = null;
+  }
+  if (movementTrailSvg) {
+    movementTrailSvg.innerHTML = '';
+    movementTrailSvg.classList.remove('movement-trail-fading');
+  }
+}
+
 /**
  * Register callback for token selection
  * @param {Function} fn
@@ -46,6 +170,7 @@ export function initGrid(container) {
   gridEl.style.setProperty('--grid-cols', GRID_COLS);
 
   buildGridCells();
+  initMovementTrail();
 
   container.appendChild(gridEl);
 }
@@ -96,8 +221,11 @@ function buildGridCells() {
         // Allow drop only if cell is empty or occupied by the same token
         const occupant = findTokenAtCell(r, c);
         if (!occupant || occupant.id === draggedTokenId) {
+          const oldRow = token.row;
+          const oldCol = token.col;
           token.row = r;
           token.col = c;
+          drawMovementTrail(oldRow, oldCol, r, c);
         }
         draggedTokenId = null;
         renderTokens();
@@ -120,11 +248,13 @@ export function resizeGrid(rows, cols) {
 
   if (!gridEl) return;
 
-  // Remove all existing cells
+  // Remove all existing cells (and the old SVG overlay)
   gridEl.innerHTML = '';
+  movementTrailSvg = null;
   gridEl.style.setProperty('--grid-cols', GRID_COLS);
 
   buildGridCells();
+  initMovementTrail();
 
   // Clamp any out-of-bounds tokens
   for (const token of state.tokens) {
@@ -355,8 +485,11 @@ function createTokenElement(token) {
       if (tok) {
         const occupant = findTokenAtCell(r, c);
         if (!occupant || occupant.id === touchDragTokenId) {
+          const oldRow = tok.row;
+          const oldCol = tok.col;
           tok.row = r;
           tok.col = c;
+          drawMovementTrail(oldRow, oldCol, r, c);
         }
       }
     }
@@ -405,6 +538,7 @@ export function selectTokenById(id) {
 export function clearGrid() {
   state.tokens = [];
   state.selectedToken = null;
+  clearMovementTrail();
   renderTokens();
 }
 
