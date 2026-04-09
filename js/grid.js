@@ -81,6 +81,9 @@ function drawMovementTrail(fromRow, fromCol, toRow, toCol) {
 
   const dr = toRow - fromRow;
   const dc = toCol - fromCol;
+  // Straight-line (Euclidean) distance in tiles × 5 ft per tile.
+  // This matches the visual dotted line and the D&D 5e variant rule
+  // where diagonal movement costs the same as orthogonal movement.
   const distanceFt = Math.round(Math.sqrt(dr * dr + dc * dc) * FEET_PER_TILE);
 
   const mx = (from.x + to.x) / 2;
