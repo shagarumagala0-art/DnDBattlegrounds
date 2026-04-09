@@ -311,6 +311,59 @@ body::before {
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.2);
   width: fit-content;
+  position: relative;
+}
+
+/* ── Movement Trail Overlay ──────────────────────────────── */
+.movement-trail-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+  overflow: visible;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.movement-trail-svg.movement-trail-fading {
+  opacity: 0;
+}
+
+.movement-trail-line {
+  stroke: rgba(240, 192, 64, 0.85);
+  stroke-width: 2.5;
+  stroke-dasharray: 7 5;
+  fill: none;
+  stroke-linecap: round;
+  animation: trail-dash 0.8s linear infinite;
+}
+
+@keyframes trail-dash {
+  to { stroke-dashoffset: -24; }
+}
+
+.movement-trail-origin {
+  fill: rgba(240, 192, 64, 0.25);
+  stroke: rgba(240, 192, 64, 0.85);
+  stroke-width: 1.5;
+}
+
+.movement-trail-label {
+  fill: #f0c040;
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  stroke: rgba(13, 17, 23, 0.9);
+  stroke-width: 3px;
+  paint-order: stroke fill;
+}
+
+.movement-trail-label-bg {
+  fill: rgba(13, 17, 23, 0.65);
 }
 
 .grid-cell {
