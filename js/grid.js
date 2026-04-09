@@ -26,6 +26,17 @@ const CELL_PX = 60;
 const CELL_GAP = 1;
 const CELL_STEP = CELL_PX + CELL_GAP; // 61px per cell
 
+// D&D grid scale: each tile represents this many feet
+const FEET_PER_TILE = 5;
+
+// Movement trail timing (ms)
+const TRAIL_FADE_DELAY_MS    = 3000;
+const TRAIL_FADE_DURATION_MS = 500;
+
+// Movement trail label dimensions (px)
+const TRAIL_LABEL_W = 44;
+const TRAIL_LABEL_H = 18;
+
 /** Return the pixel centre of a grid cell (relative to gridEl). */
 function getCellCenter(row, col) {
   return {
@@ -70,7 +81,7 @@ function drawMovementTrail(fromRow, fromCol, toRow, toCol) {
 
   const dr = toRow - fromRow;
   const dc = toCol - fromCol;
-  const distanceFt = Math.round(Math.sqrt(dr * dr + dc * dc) * 5);
+  const distanceFt = Math.round(Math.sqrt(dr * dr + dc * dc) * FEET_PER_TILE);
 
   const mx = (from.x + to.x) / 2;
   const my = (from.y + to.y) / 2;
@@ -97,13 +108,11 @@ function drawMovementTrail(fromRow, fromCol, toRow, toCol) {
   circle.classList.add('movement-trail-origin');
 
   // Label background
-  const labelWidth = 44;
-  const labelHeight = 18;
   const labelBg = document.createElementNS(ns, 'rect');
-  labelBg.setAttribute('x', mx - labelWidth / 2);
-  labelBg.setAttribute('y', my - labelHeight / 2);
-  labelBg.setAttribute('width', labelWidth);
-  labelBg.setAttribute('height', labelHeight);
+  labelBg.setAttribute('x', mx - TRAIL_LABEL_W / 2);
+  labelBg.setAttribute('y', my - TRAIL_LABEL_H / 2);
+  labelBg.setAttribute('width', TRAIL_LABEL_W);
+  labelBg.setAttribute('height', TRAIL_LABEL_H);
   labelBg.setAttribute('rx', 4);
   labelBg.classList.add('movement-trail-label-bg');
 
@@ -116,15 +125,15 @@ function drawMovementTrail(fromRow, fromCol, toRow, toCol) {
 
   movementTrailSvg.append(line, circle, labelBg, label);
 
-  // Fade out after 3 seconds
+  // Fade out after the configured delay
   movementTrailTimer = setTimeout(() => {
     movementTrailSvg.classList.add('movement-trail-fading');
     movementTrailTimer = setTimeout(() => {
       movementTrailSvg.innerHTML = '';
       movementTrailSvg.classList.remove('movement-trail-fading');
       movementTrailTimer = null;
-    }, 500);
-  }, 3000);
+    }, TRAIL_FADE_DURATION_MS);
+  }, TRAIL_FADE_DELAY_MS);
 }
 
 /**
