@@ -10,6 +10,13 @@ let gridEl = null;
 let onTokenSelectCb = null;
 let onTokenDeselectCb = null;
 
+// Drag-and-drop state
+let draggedTokenId = null;
+
+// Touch drag state
+let touchDragTokenId = null;
+let touchGhostEl = null;
+
 /**
  * Register callback for token selection
  * @param {Function} fn
@@ -63,11 +70,38 @@ function buildGridCells() {
         cell.appendChild(lbl);
       }
 
-      cell.addEventListener('click', () => handleCellClick(r, c));
-      cell.addEventListener('touchend', (e) => {
+      // Click on empty cell deselects the current token
+      cell.addEventListener('click', () => {
+        if (state.selectedToken) deselectToken();
+      });
+
+      // Drag-and-drop: allow drop on every cell
+      cell.addEventListener('dragover', (e) => {
+        if (!draggedTokenId) return;
         e.preventDefault();
-        handleCellClick(r, c);
-      }, { passive: false });
+        e.dataTransfer.dropEffect = 'move';
+        cell.classList.add('cell-drag-over');
+      });
+
+      cell.addEventListener('dragleave', () => {
+        cell.classList.remove('cell-drag-over');
+      });
+
+      cell.addEventListener('drop', (e) => {
+        e.preventDefault();
+        cell.classList.remove('cell-drag-over');
+        if (!draggedTokenId) return;
+        const token = state.tokens.find(t => t.id === draggedTokenId);
+        if (!token) return;
+        // Allow drop only if cell is empty or occupied by the same token
+        const occupant = findTokenAtCell(r, c);
+        if (!occupant || occupant.id === draggedTokenId) {
+          token.row = r;
+          token.col = c;
+        }
+        draggedTokenId = null;
+        renderTokens();
+      });
 
       gridEl.appendChild(cell);
     }
@@ -110,31 +144,20 @@ export function getGridSize() {
 }
 
 /**
- * Handle a cell being clicked
+ * Handle a cell being clicked (kept for external callers)
  * @param {number} row
  * @param {number} col
  */
 export function handleCellClick(row, col) {
   const clickedToken = findTokenAtCell(row, col);
-  const selected = state.selectedToken;
-
-  if (!selected) {
-    // Nothing selected — try to select the token in this cell
-    if (clickedToken) {
+  if (clickedToken) {
+    if (state.selectedToken && state.selectedToken.id === clickedToken.id) {
+      deselectToken();
+    } else {
       selectToken(clickedToken);
     }
   } else {
-    // Something is selected
-    if (clickedToken && clickedToken.id === selected.id) {
-      // Clicked same token — deselect
-      deselectToken();
-    } else if (clickedToken) {
-      // Clicked a different token — select it instead
-      selectToken(clickedToken);
-    } else {
-      // Clicked empty cell — move selected token here
-      moveToken(selected, row, col);
-    }
+    deselectToken();
   }
 }
 
@@ -155,18 +178,6 @@ export function deselectToken() {
   state.selectedToken = null;
   renderTokens();
   if (onTokenDeselectCb) onTokenDeselectCb();
-}
-
-/**
- * Move a token to a new cell
- * @param {Object} token
- * @param {number} row
- * @param {number} col
- */
-function moveToken(token, row, col) {
-  token.row = row;
-  token.col = col;
-  deselectToken();
 }
 
 /**
@@ -257,6 +268,113 @@ function createTokenElement(token) {
       <div class="token-hp-pip ${getHpColorClass(token.hp, token.maxHp)}" style="width: ${hpPct}%"></div>
     </div>
   `;
+
+  // ── HTML5 Drag-and-Drop ──────────────────────────────────────
+  el.draggable = true;
+
+  el.addEventListener('dragstart', (e) => {
+    draggedTokenId = token.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', token.id);
+    // Defer the class addition so the browser captures the un-faded element as ghost
+    requestAnimationFrame(() => el.classList.add('token-dragging'));
+  });
+
+  el.addEventListener('dragend', () => {
+    draggedTokenId = null;
+    // Clean up any lingering drag-over highlights
+    gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
+    renderTokens();
+  });
+
+  // Click on the token itself selects / deselects it
+  el.addEventListener('click', (e) => {
+    e.stopPropagation(); // prevent bubbling to the cell's click handler
+    if (state.selectedToken && state.selectedToken.id === token.id) {
+      deselectToken();
+    } else {
+      selectToken(token);
+    }
+  });
+
+  // ── Touch drag-and-drop ──────────────────────────────────────
+  el.addEventListener('touchstart', (e) => {
+    touchDragTokenId = token.id;
+    const touch = e.touches[0];
+
+    // Create a ghost element that follows the finger
+    touchGhostEl = el.cloneNode(true);
+    touchGhostEl.classList.add('token-dragging', 'token-touch-ghost');
+    touchGhostEl.style.position = 'fixed';
+    touchGhostEl.style.pointerEvents = 'none';
+    touchGhostEl.style.zIndex = '9999';
+    touchGhostEl.style.width = el.offsetWidth + 'px';
+    touchGhostEl.style.height = el.offsetHeight + 'px';
+    touchGhostEl.style.transform = 'translate(-50%, -50%)';
+    touchGhostEl.style.left = touch.clientX + 'px';
+    touchGhostEl.style.top = touch.clientY + 'px';
+    document.body.appendChild(touchGhostEl);
+  }, { passive: false });
+
+  el.addEventListener('touchmove', (e) => {
+    if (!touchDragTokenId) return;
+    e.preventDefault(); // prevent page scroll while dragging a token
+    const touch = e.touches[0];
+
+    if (touchGhostEl) {
+      touchGhostEl.style.left = touch.clientX + 'px';
+      touchGhostEl.style.top = touch.clientY + 'px';
+    }
+
+    // Highlight the cell under the finger
+    gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
+    const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellUnder = elementUnder && elementUnder.closest('.grid-cell');
+    if (cellUnder) cellUnder.classList.add('cell-drag-over');
+  }, { passive: false });
+
+  el.addEventListener('touchend', (e) => {
+    if (!touchDragTokenId) return;
+    const touch = e.changedTouches[0];
+
+    // Remove ghost
+    if (touchGhostEl) {
+      touchGhostEl.remove();
+      touchGhostEl = null;
+    }
+
+    gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
+
+    // Find the cell under the finger at the moment of release
+    const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellUnder = elementUnder && elementUnder.closest('.grid-cell');
+    if (cellUnder) {
+      const r = parseInt(cellUnder.dataset.row, 10);
+      const c = parseInt(cellUnder.dataset.col, 10);
+      const tok = state.tokens.find(t => t.id === touchDragTokenId);
+      if (tok) {
+        const occupant = findTokenAtCell(r, c);
+        if (!occupant || occupant.id === touchDragTokenId) {
+          tok.row = r;
+          tok.col = c;
+        }
+      }
+    }
+
+    touchDragTokenId = null;
+    renderTokens();
+  }, { passive: true });
+
+  // Clean up if the touch sequence is cancelled (e.g. incoming call)
+  el.addEventListener('touchcancel', () => {
+    if (touchGhostEl) {
+      touchGhostEl.remove();
+      touchGhostEl = null;
+    }
+    gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
+    touchDragTokenId = null;
+    renderTokens();
+  }, { passive: true });
 
   return el;
 }

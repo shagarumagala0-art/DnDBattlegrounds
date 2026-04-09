@@ -393,6 +393,27 @@ body::before {
   transform: translate(-50%, -50%) scale(1.1);
 }
 
+/* Token being dragged (faded out at source cell) */
+.token-dragging {
+  opacity: 0.35;
+  animation: none;
+  transform: translate(-50%, -50%) scale(1) !important;
+}
+
+/* Touch ghost element that follows the finger */
+.token-touch-ghost {
+  opacity: 0.8;
+  border: 2px dashed var(--gold-bright, #f0c040);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.8), 0 0 12px var(--gold-glow, rgba(240,192,64,0.5));
+}
+
+/* Grid cell highlighted as a valid drop target */
+.cell-drag-over {
+  background-color: rgba(240, 192, 64, 0.25) !important;
+  outline: 2px solid rgba(240, 192, 64, 0.6);
+  outline-offset: -2px;
+}
+
 .token-dead {
   opacity: 0.45;
   filter: grayscale(0.7);
