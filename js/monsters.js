@@ -293,6 +293,36 @@ export function showStatblock(monster) {
     btn.addEventListener('click', () => {
       const damageParts = btn.dataset.damage.split('|');
       const damageTypesParts = (btn.dataset.damageTypes || '').split('|');
+
+      // Saving throw check for DC abilities: find the selected target (if any)
+      const saveDc = btn.dataset.saveDc ? parseInt(btn.dataset.saveDc, 10) : null;
+      const saveAbility = btn.dataset.saveAbility || null;
+      let saveInfo = null;
+      if (saveDc !== null && saveAbility) {
+        const targetSelect = document.getElementById('target-token-select');
+        const targetId = targetSelect?.value || '';
+        const targetToken = targetId ? state.tokens.find(t => t.id === targetId) : null;
+        if (targetToken) {
+          // Compute save modifier: prefer explicit monster save, then proficiency for characters, else raw ability modifier
+          let saveMod = getModifier(targetToken[saveAbility] || 10);
+          if (targetToken.monsterData?.save?.[saveAbility] !== undefined) {
+            const parsed = parseInt(targetToken.monsterData.save[saveAbility], 10);
+            if (!isNaN(parsed)) saveMod = parsed;
+          } else if (targetToken.characterData) {
+            const prof = targetToken.characterData.proficiencyBonus || 2;
+            const saves = targetToken.characterData.saveProficiencies || {};
+            saveMod = getModifier(targetToken[saveAbility] || 10) + (saves[saveAbility] ? prof : 0);
+          }
+          const d20 = Math.floor(Math.random() * 20) + 1;
+          const saveTotal = d20 + saveMod;
+          const saveModStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
+          saveInfo = {
+            label: SAVE_LABEL_MAP[saveAbility] || saveAbility.toUpperCase(),
+            saveModStr, d20, saveTotal, saveDc,
+            savePassed: saveTotal >= saveDc,
+          };
+        }
+      }
       let totalDmg = 0;
       const rolls = [];
       damageParts.forEach((dice, idx) => {
@@ -301,6 +331,9 @@ export function showStatblock(monster) {
         const dmgType = (damageTypesParts[idx] || '').toLowerCase();
         rolls.push(dmgType ? `${dice}(${result}) ${dmgType}` : `${dice}(${result})`);
       });
+      // Apply save halving to the total (D&D 5e: halve the total damage on a successful save)
+      const appliedDmg = saveInfo?.savePassed ? Math.floor(totalDmg / 2) : totalDmg;
+
       const name = btn.closest('.sb-attack-row')?.querySelector('.sb-attack-name')?.textContent || 'Damage';
       const resultEl = btn.closest('.sb-attack-row')?.querySelector('.sb-row-dmg-result');
       if (resultEl) {
@@ -308,9 +341,23 @@ export function showStatblock(monster) {
         boldName.textContent = name;
         const boldTotal = document.createElement('strong');
         boldTotal.textContent = String(totalDmg);
-        resultEl.replaceChildren(
-          `💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal
-        );
+        const children = [`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal];
+
+        if (saveInfo) {
+          const saveSpan = document.createElement('span');
+          const saveOutcome = saveInfo.savePassed ? '✓ SAVED' : '✗ FAILED';
+          saveSpan.textContent = ` [${saveInfo.label} Save: d20(${saveInfo.d20})${saveInfo.saveModStr}=${saveInfo.saveTotal} vs DC ${saveInfo.saveDc} ${saveOutcome}]`;
+          saveSpan.style.color = saveInfo.savePassed ? 'var(--hp-full, #2ecc71)' : 'var(--hp-low, #e74c3c)';
+          children.push(saveSpan);
+          if (saveInfo.savePassed) {
+            const noteSpan = document.createElement('span');
+            noteSpan.textContent = ` → ${appliedDmg} (SAVED, half dmg)`;
+            noteSpan.style.color = 'var(--text-secondary)';
+            children.push(noteSpan);
+          }
+        }
+
+        resultEl.replaceChildren(...children);
       }
     });
   });
