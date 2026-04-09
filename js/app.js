@@ -458,9 +458,15 @@ function setupTokenInfoPanel() {
         const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
         const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
 
+        // Saving throw check (AoE / DC abilities): roll before applying damage
+        const saveInfo = rollSavingThrow(dmgBtn, targetToken);
+        // saveMultiplier: 0.5 if target passed the save, 1 otherwise
+        const saveMultiplier = saveInfo?.savePassed ? 0.5 : 1;
+
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
+        const dmgTypesArray = (dmgBtn.dataset.damageTypes || '').toLowerCase().split('|').filter(Boolean);
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const raw = rollDice(effectiveDice);
@@ -469,12 +475,14 @@ function setupTokenInfoPanel() {
           rolls.push(dmgType ? `${effectiveDice}(${raw}) ${dmgType}` : `${effectiveDice}(${raw})`);
 
           if (targetToken) {
+            // Apply save halving first, then resistance/immunity
+            const savedRaw = Math.floor(raw * saveMultiplier);
             if (dmgType && immuneTypes.includes(dmgType)) {
               // immune: contributes 0
             } else if (dmgType && resistTypes.includes(dmgType)) {
-              appliedDmg += Math.floor(raw / 2);
+              appliedDmg += Math.floor(savedRaw / 2);
             } else {
-              appliedDmg += raw;
+              appliedDmg += savedRaw;
             }
           } else {
             appliedDmg += raw;
@@ -505,7 +513,14 @@ function setupTokenInfoPanel() {
           if (appliedDmg === 0 && totalDmg > 0) {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
-            resistNote = ` → ${appliedDmg} (RESIST)`;
+            resistNote = ` → ${appliedDmg}`;
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesArray.includes(t))) {
+              resistNote += ' (SAVED+RESIST)';
+            } else if (saveInfo?.savePassed) {
+              resistNote += ' (SAVED, half dmg)';
+            } else {
+              resistNote += ' (RESIST)';
+            }
           }
           const toastType = appliedDmg === 0 ? 'info' : 'warning';
           showToast(`💥 ${targetToken.name} takes ${appliedDmg} damage (${targetToken.hp}/${targetToken.maxHp} HP)`, toastType, 2500);
@@ -516,19 +531,29 @@ function setupTokenInfoPanel() {
           boldName.textContent = name;
           const boldTotal = document.createElement('strong');
           boldTotal.textContent = String(totalDmg);
+          const children = [`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal];
+
+          if (saveInfo) {
+            const saveSpan = document.createElement('span');
+            const saveOutcome = saveInfo.savePassed ? '✓ SAVED' : '✗ FAILED';
+            saveSpan.textContent = ` [${saveInfo.label} Save: d20(${saveInfo.d20})${saveInfo.saveModStr}=${saveInfo.saveTotal} vs DC ${saveInfo.saveDc} ${saveOutcome}]`;
+            saveSpan.style.color = saveInfo.savePassed ? 'var(--hp-full, #2ecc71)' : 'var(--hp-low, #e74c3c)';
+            children.push(saveSpan);
+          }
+
           if (isCrit) {
             const critSpan = document.createElement('span');
             critSpan.textContent = ' (Critical!)' + resistNote;
             critSpan.style.color = 'var(--gold-accent, gold)';
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+            children.push(critSpan);
           } else if (resistNote) {
             const noteSpan = document.createElement('span');
             noteSpan.textContent = resistNote;
             noteSpan.style.color = 'var(--text-secondary)';
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, noteSpan);
-          } else {
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+            children.push(noteSpan);
           }
+
+          resultEl.replaceChildren(...children);
           scheduleResultFade(resultEl);
         }
       }
@@ -712,10 +737,11 @@ export function updateTokenInfoPanel(token) {
         } else if (atk.isAoe && atk.saveDc !== null) {
           const dcBadge = document.createElement('span');
           dcBadge.className = 'sb-atk-btn sb-dc-badge';
-          dcBadge.title = `${displayName}: saving throw DC`;
+          const abilityLabel = atk.saveAbility ? { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }[atk.saveAbility] || '' : '';
+          dcBadge.title = `${displayName}: DC ${atk.saveDc}${abilityLabel ? ` ${abilityLabel}` : ''} saving throw`;
           const dcLabel = document.createElement('span');
           dcLabel.className = 'sb-atk-label';
-          dcLabel.textContent = 'DC';
+          dcLabel.textContent = abilityLabel ? `DC ${abilityLabel}` : 'DC';
           const dcVal = document.createElement('span');
           dcVal.className = 'sb-atk-val';
           dcVal.textContent = atk.saveDc;
@@ -727,6 +753,8 @@ export function updateTokenInfoPanel(token) {
         dmgBtn.className = 'sb-atk-btn sb-dmg-roll-btn';
         dmgBtn.dataset.damage = atk.damageDice.join('|');
         dmgBtn.dataset.damageTypes = (atk.damageTypes || []).join('|');
+        if (atk.saveDc !== null && atk.saveDc !== undefined) dmgBtn.dataset.saveDc = atk.saveDc;
+        if (atk.saveAbility) dmgBtn.dataset.saveAbility = atk.saveAbility;
         const damageSummary = atk.damageDice.map((dice, i) => {
           const type = (atk.damageTypes || [])[i];
           return type ? `${dice} ${type}` : dice;
@@ -1156,9 +1184,15 @@ function setupCharacterSheetOverlay() {
         const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
         const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
 
+        // Saving throw check (AoE / DC abilities): roll before applying damage
+        const saveInfo = rollSavingThrow(dmgBtn, targetToken);
+        // saveMultiplier: 0.5 if target passed the save, 1 otherwise
+        const saveMultiplier = saveInfo?.savePassed ? 0.5 : 1;
+
         let totalDmg = 0;
         let appliedDmg = 0;
         const rolls = [];
+        const dmgTypesArray = (dmgBtn.dataset.damageTypes || '').toLowerCase().split('|').filter(Boolean);
         damageParts.forEach((dice, idx) => {
           const effectiveDice = isCrit ? doubleDiceNotation(dice) : dice;
           const result = rollDice(effectiveDice);
@@ -1167,12 +1201,14 @@ function setupCharacterSheetOverlay() {
           rolls.push(dmgType ? `${effectiveDice}(${result}) ${dmgType}` : `${effectiveDice}(${result})`);
 
           if (targetToken) {
+            // Apply save halving first, then resistance/immunity
+            const savedResult = Math.floor(result * saveMultiplier);
             if (dmgType && immuneTypes.includes(dmgType)) {
               // immune: contributes 0
             } else if (dmgType && resistTypes.includes(dmgType)) {
-              appliedDmg += Math.floor(result / 2);
+              appliedDmg += Math.floor(savedResult / 2);
             } else {
-              appliedDmg += result;
+              appliedDmg += savedResult;
             }
           } else {
             appliedDmg += result;
@@ -1200,7 +1236,14 @@ function setupCharacterSheetOverlay() {
           if (appliedDmg === 0 && totalDmg > 0) {
             resistNote = ' → 0 (IMMUNE)';
           } else if (appliedDmg < totalDmg) {
-            resistNote = ` → ${appliedDmg} (RESIST)`;
+            resistNote = ` → ${appliedDmg}`;
+            if (saveInfo?.savePassed && resistTypes.some(t => dmgTypesArray.includes(t))) {
+              resistNote += ' (SAVED+RESIST)';
+            } else if (saveInfo?.savePassed) {
+              resistNote += ' (SAVED, half dmg)';
+            } else {
+              resistNote += ' (RESIST)';
+            }
           }
           const toastType = appliedDmg === 0 ? 'info' : 'warning';
           showToast(`💥 ${targetToken.name} takes ${appliedDmg} damage (${targetToken.hp}/${targetToken.maxHp} HP)`, toastType, 2500);
@@ -1211,19 +1254,29 @@ function setupCharacterSheetOverlay() {
           boldName.textContent = name;
           const boldTotal = document.createElement('strong');
           boldTotal.textContent = String(totalDmg);
+          const children = [`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal];
+
+          if (saveInfo) {
+            const saveSpan = document.createElement('span');
+            const saveOutcome = saveInfo.savePassed ? '✓ SAVED' : '✗ FAILED';
+            saveSpan.textContent = ` [${saveInfo.label} Save: d20(${saveInfo.d20})${saveInfo.saveModStr}=${saveInfo.saveTotal} vs DC ${saveInfo.saveDc} ${saveOutcome}]`;
+            saveSpan.style.color = saveInfo.savePassed ? 'var(--hp-full, #2ecc71)' : 'var(--hp-low, #e74c3c)';
+            children.push(saveSpan);
+          }
+
           if (isCrit) {
             const critSpan = document.createElement('span');
             critSpan.textContent = ' (Critical!)' + resistNote;
             critSpan.style.color = 'var(--gold-accent, gold)';
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, critSpan);
+            children.push(critSpan);
           } else if (resistNote) {
             const noteSpan = document.createElement('span');
             noteSpan.textContent = resistNote;
             noteSpan.style.color = 'var(--text-secondary)';
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal, noteSpan);
-          } else {
-            resultEl.replaceChildren(`💥 `, boldName, `: ${rolls.join(' + ')} = `, boldTotal);
+            children.push(noteSpan);
           }
+
+          resultEl.replaceChildren(...children);
           scheduleResultFade(resultEl);
         }
       }
@@ -1378,4 +1431,60 @@ function flattenDamageTypes(arr, propertyName) {
     }
   }
   return types;
+}
+
+/**
+ * Get the saving throw modifier for a token for the given ability.
+ * Prefers explicit save proficiency data (monsters) or proficiency bonus (characters)
+ * over the raw ability modifier.
+ *
+ * @param {Object} token
+ * @param {string} ability - 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+ * @returns {number}
+ */
+function getTokenSaveMod(token, ability) {
+  // Monsters: use explicit save bonus from statblock when available
+  if (token.monsterData?.save?.[ability] !== undefined) {
+    const parsed = parseInt(token.monsterData.save[ability], 10);
+    if (!isNaN(parsed)) return parsed;
+    console.warn(`[combat] Could not parse save bonus for ${ability}: "${token.monsterData.save[ability]}"; using ability modifier instead.`);
+  }
+  // Characters: add proficiency bonus when proficient in this save
+  if (token.characterData) {
+    const char = token.characterData;
+    const rawMod = getModifier(token[ability] || 10);
+    const prof = char.proficiencyBonus || 2;
+    const saves = char.saveProficiencies || {};
+    return rawMod + (saves[ability] ? prof : 0);
+  }
+  // Default: raw ability modifier
+  return getModifier(token[ability] || 10);
+}
+
+/** Ability key → display label */
+const SAVE_ABILITY_LABEL = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
+
+/**
+ * Roll a saving throw for a target token against a DC ability.
+ * Returns save info if both saveDc and saveAbility are set and a target exists,
+ * or null if the attack has no save (normal attack) or there is no target.
+ *
+ * @param {HTMLElement} dmgBtn - The clicked DMG button (provides data-save-dc / data-save-ability)
+ * @param {Object|null} targetToken
+ * @returns {{ label: string, saveModStr: string, d20: number, saveTotal: number, saveDc: number, savePassed: boolean }|null}
+ */
+function rollSavingThrow(dmgBtn, targetToken) {
+  const saveDc = dmgBtn.dataset.saveDc ? parseInt(dmgBtn.dataset.saveDc, 10) : null;
+  const saveAbility = dmgBtn.dataset.saveAbility || null;
+  if (saveDc === null || !saveAbility || !targetToken) return null;
+
+  const saveMod = getTokenSaveMod(targetToken, saveAbility);
+  const d20 = Math.floor(Math.random() * 20) + 1;
+  const saveTotal = d20 + saveMod;
+  const saveModStr = saveMod >= 0 ? `+${saveMod}` : `${saveMod}`;
+  return {
+    label: SAVE_ABILITY_LABEL[saveAbility] || saveAbility.toUpperCase(),
+    saveModStr, d20, saveTotal, saveDc,
+    savePassed: saveTotal >= saveDc,
+  };
 }

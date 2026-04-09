@@ -400,14 +400,22 @@ function extractEntryText(entries) {
   }).join(' ');
 }
 
+/** Maps full ability name (as found in action text) to the short key used elsewhere. */
+const SAVE_ABILITY_NAME_MAP = {
+  strength: 'str', dexterity: 'dex', constitution: 'con',
+  intelligence: 'int', wisdom: 'wis', charisma: 'cha',
+};
+
 /**
  * Extract attack information from a monster's action list.
  * Actions with {@hit N} get an attack roll + damage roll.
  * Actions with {@damage} but no {@hit} (AOE / save-based) get damage roll only.
- * For AOE actions, the first {@dc N} found in the action text is captured as saveDc.
+ * For AOE actions, the first {@dc N} found in the action text is captured as saveDc,
+ * and the ability name immediately following (e.g. "Dexterity saving throw") is
+ * captured as saveAbility (short form: 'str', 'dex', 'con', 'int', 'wis', 'cha').
  *
  * @param {Object} monster
- * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, saveDc: number|null, damageDice: string[], damageTypes: string[]}>}
+ * @returns {Array<{name: string, isAoe: boolean, hitBonus: number|null, saveDc: number|null, saveAbility: string|null, damageDice: string[], damageTypes: string[]}>}
  */
 export function parseMonsterAttacks(monster) {
   const attacks = [];
@@ -436,19 +444,28 @@ export function parseMonsterAttacks(monster) {
         isAoe: false,
         hitBonus: parseInt(hitMatch[1], 10),
         saveDc: null,
+        saveAbility: null,
         damageDice,
         damageTypes,
       });
     } else {
-      // Search the full nested text for a saving throw DC
+      // Search the full nested text for a saving throw DC and ability
       const allText = extractEntryText(entries);
-      const dcMatch = allText.match(/\{@dc\s+(\d+)\}/);
-      const saveDc = dcMatch ? parseInt(dcMatch[1], 10) : null;
+      // Try to match "{@dc N} AbilityName saving throw" to capture both DC and ability
+      const dcAbilityMatch = allText.match(/\{@dc\s+(\d+)\}\s+(\w+)\s+saving throw/i);
+      const dcOnlyMatch = dcAbilityMatch ? null : allText.match(/\{@dc\s+(\d+)\}/);
+      const saveDc = dcAbilityMatch
+        ? parseInt(dcAbilityMatch[1], 10)
+        : (dcOnlyMatch ? parseInt(dcOnlyMatch[1], 10) : null);
+      const saveAbility = dcAbilityMatch
+        ? (SAVE_ABILITY_NAME_MAP[dcAbilityMatch[2].toLowerCase()] || null)
+        : null;
       attacks.push({
         name: action.name,
         isAoe: true,
         hitBonus: null,
         saveDc,
+        saveAbility,
         damageDice,
         damageTypes,
       });
@@ -692,13 +709,16 @@ export function parseStatblock(monster) {
                 <span class="sb-atk-val">${bonusStr}</span>
               </button>`;
       } else if (atk.isAoe && atk.saveDc !== null) {
-        html += `<span class="sb-atk-btn sb-dc-badge" title="${safeTitle}: saving throw DC">
-                <span class="sb-atk-label">DC</span>
+        const abilityLabel = atk.saveAbility ? { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }[atk.saveAbility] || '' : '';
+        const dcBadgeLabel = abilityLabel ? `DC ${abilityLabel}` : 'DC';
+        const dcBadgeTitle = `${safeTitle}: DC ${atk.saveDc}${abilityLabel ? ` ${abilityLabel}` : ''} saving throw`;
+        html += `<span class="sb-atk-btn sb-dc-badge" title="${dcBadgeTitle}">
+                <span class="sb-atk-label">${dcBadgeLabel}</span>
                 <span class="sb-atk-val">${atk.saveDc}</span>
               </span>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${safeTitle}: ${damageSummary}">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}"${atk.saveDc !== null ? ` data-save-dc="${atk.saveDc}"` : ''}${atk.saveAbility ? ` data-save-ability="${atk.saveAbility}"` : ''} title="${safeTitle}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
               <span class="sb-atk-val">${damageSummary}</span>
             </button>`;
