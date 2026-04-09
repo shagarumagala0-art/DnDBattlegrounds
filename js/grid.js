@@ -17,6 +17,98 @@ let draggedTokenId = null;
 let touchDragTokenId = null;
 let touchGhostEl = null;
 
+// Drag distance-line state
+let dragLineSvg = null;
+let dragOriginRow = null;
+let dragOriginCol = null;
+
+/** D&D 5e: each grid square represents this many feet of movement. */
+const FEET_PER_SQUARE = 5;
+/** Font size (px) for the distance label rendered on the drag line. */
+const DRAG_LABEL_FONT_SIZE = 13;
+
+/** Lazily create (or return) the fixed-position SVG overlay used to draw the drag line. */
+function getOrCreateDragLineSvg() {
+  if (!dragLineSvg) {
+    dragLineSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    dragLineSvg.id = 'drag-line-svg';
+    dragLineSvg.style.cssText =
+      'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9998;overflow:visible;';
+    document.body.appendChild(dragLineSvg);
+  }
+  return dragLineSvg;
+}
+
+/**
+ * Draw (or update) the drag line from the origin cell to the current cursor/touch position.
+ * @param {number} cursorX - viewport X of the cursor / touch point
+ * @param {number} cursorY - viewport Y of the cursor / touch point
+ * @param {HTMLElement|null} cellUnder - the .grid-cell currently under the cursor (may be null)
+ */
+function updateDragLine(cursorX, cursorY, cellUnder) {
+  if (dragOriginRow === null || dragOriginCol === null || !gridEl) return;
+
+  const svg = getOrCreateDragLineSvg();
+
+  const originCell = gridEl.querySelector(
+    `[data-row="${dragOriginRow}"][data-col="${dragOriginCol}"]`
+  );
+  if (!originCell) { svg.innerHTML = ''; return; }
+
+  const oRect = originCell.getBoundingClientRect();
+  const ox = oRect.left + oRect.width / 2;
+  const oy = oRect.top + oRect.height / 2;
+
+  svg.innerHTML = '';
+
+  // Dashed line from origin to cursor
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', ox);
+  line.setAttribute('y1', oy);
+  line.setAttribute('x2', cursorX);
+  line.setAttribute('y2', cursorY);
+  line.setAttribute('stroke', '#f0c040');
+  line.setAttribute('stroke-width', '2');
+  line.setAttribute('stroke-dasharray', '8,5');
+  line.setAttribute('opacity', '0.9');
+  svg.appendChild(line);
+
+  // Distance label at midpoint
+  if (cellUnder) {
+    const tr = parseInt(cellUnder.dataset.row, 10);
+    const tc = parseInt(cellUnder.dataset.col, 10);
+    const squares = Math.max(Math.abs(tr - dragOriginRow), Math.abs(tc - dragOriginCol));
+    const feet = squares * FEET_PER_SQUARE;
+
+    const mx = (ox + cursorX) / 2;
+    const my = (oy + cursorY) / 2;
+
+    // Stroke-painted text for legibility over any background
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', mx);
+    text.setAttribute('y', my);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('fill', '#f0c040');
+    text.setAttribute('font-size', DRAG_LABEL_FONT_SIZE);
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('font-family', 'sans-serif');
+    text.setAttribute('paint-order', 'stroke');
+    text.setAttribute('stroke', '#0d1117');
+    text.setAttribute('stroke-width', '3');
+    text.setAttribute('stroke-linejoin', 'round');
+    text.textContent = `${feet} ft`;
+    svg.appendChild(text);
+  }
+}
+
+/** Hide / clear the drag line and reset origin tracking. */
+function clearDragLine() {
+  if (dragLineSvg) dragLineSvg.innerHTML = '';
+  dragOriginRow = null;
+  dragOriginCol = null;
+}
+
 /**
  * Register callback for token selection
  * @param {Function} fn
@@ -46,6 +138,14 @@ export function initGrid(container) {
   gridEl.style.setProperty('--grid-cols', GRID_COLS);
 
   buildGridCells();
+
+  // Single grid-level dragover listener: updates the distance line in real time.
+  // Individual cells still handle e.preventDefault() for the drop target logic.
+  gridEl.addEventListener('dragover', (e) => {
+    if (!draggedTokenId || dragOriginRow === null) return;
+    const cellUnder = e.target && e.target.closest && e.target.closest('.grid-cell');
+    updateDragLine(e.clientX, e.clientY, cellUnder);
+  });
 
   container.appendChild(gridEl);
 }
@@ -274,6 +374,8 @@ function createTokenElement(token) {
 
   el.addEventListener('dragstart', (e) => {
     draggedTokenId = token.id;
+    dragOriginRow = token.row;
+    dragOriginCol = token.col;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', token.id);
     // Defer the class addition so the browser captures the un-faded element as ghost
@@ -282,6 +384,7 @@ function createTokenElement(token) {
 
   el.addEventListener('dragend', () => {
     draggedTokenId = null;
+    clearDragLine();
     // Clean up any lingering drag-over highlights
     gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
     renderTokens();
@@ -300,6 +403,8 @@ function createTokenElement(token) {
   // ── Touch drag-and-drop ──────────────────────────────────────
   el.addEventListener('touchstart', (e) => {
     touchDragTokenId = token.id;
+    dragOriginRow = token.row;
+    dragOriginCol = token.col;
     const touch = e.touches[0];
 
     // Create a ghost element that follows the finger
@@ -331,6 +436,7 @@ function createTokenElement(token) {
     const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
     const cellUnder = elementUnder && elementUnder.closest('.grid-cell');
     if (cellUnder) cellUnder.classList.add('cell-drag-over');
+    updateDragLine(touch.clientX, touch.clientY, cellUnder);
   }, { passive: false });
 
   el.addEventListener('touchend', (e) => {
@@ -362,6 +468,7 @@ function createTokenElement(token) {
     }
 
     touchDragTokenId = null;
+    clearDragLine();
     renderTokens();
   }, { passive: true });
 
@@ -373,6 +480,7 @@ function createTokenElement(token) {
     }
     gridEl.querySelectorAll('.cell-drag-over').forEach(c => c.classList.remove('cell-drag-over'));
     touchDragTokenId = null;
+    clearDragLine();
     renderTokens();
   }, { passive: true });
 
