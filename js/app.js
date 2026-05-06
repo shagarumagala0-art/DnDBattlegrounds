@@ -10,7 +10,7 @@ import {
 } from './grid.js';
 import { loadBestiaries, loadSpells, searchMonsters, renderMonsterList, closeStatblock, openAddToArenaModal, createMonsterToken, parseMonsterAttacks, parseMonsterSpells, cleanActionName } from './monsters.js';
 import { createCharacterToken, renderCharacterList, getCharacterAttacks, parseCharacterStatblock } from './dicecloud.js';
-import { parseGSheetJSON } from './import.js';
+import { parseGSheetJSON, parseGSheetVisualizationData } from './import.js';
 import { getHpColorClass, showToast, formatModifier, getModifier, getAbbr, generateId, getSpellcastingModifier, rollDice, formatSpeed } from './utils.js';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -898,6 +898,28 @@ export function updateTokenInfoPanel(token) {
       } else {
         resistSection.classList.add('hidden');
       }
+    } else if (token.characterData) {
+      // Show resistances/immunities for imported player characters that have them
+      const c = token.characterData;
+      const lines = [];
+      if (c.damageVulnerabilities?.length) {
+        lines.push(`<span class="res-line res-vuln"><strong>VULN:</strong> ${c.damageVulnerabilities.join(', ')}</span>`);
+      }
+      if (c.damageResistances?.length) {
+        lines.push(`<span class="res-line res-resist"><strong>RESIST:</strong> ${c.damageResistances.join(', ')}</span>`);
+      }
+      if (c.damageImmunities?.length) {
+        lines.push(`<span class="res-line res-immune"><strong>IMMUNE:</strong> ${c.damageImmunities.join(', ')}</span>`);
+      }
+      if (c.conditionImmunities?.length) {
+        lines.push(`<span class="res-line res-immune"><strong>COND IMMUNE:</strong> ${c.conditionImmunities.join(', ')}</span>`);
+      }
+      if (lines.length > 0) {
+        resistContent.innerHTML = lines.join('');
+        resistSection.classList.remove('hidden');
+      } else {
+        resistSection.classList.add('hidden');
+      }
     } else {
       resistSection.classList.add('hidden');
     }
@@ -939,6 +961,36 @@ const SHEET_CORS_PROXIES = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
 ];
 
+/**
+ * Extract the spreadsheet ID and optional sheet GID from a Google Sheets URL.
+ * Returns null for the id if the URL is not a Google Sheets link.
+ * @param {string} url
+ * @returns {{ id: string|null, gid: string|null }}
+ */
+function extractGoogleSheetParams(url) {
+  const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  const gidMatch = url.match(/[#&?]gid=(\d+)/);
+  return {
+    id: idMatch ? idMatch[1] : null,
+    gid: gidMatch ? gidMatch[1] : null,
+  };
+}
+
+/**
+ * Strip the JSONP wrapper that Google's Visualization API wraps its response in
+ * and return the inner JSON object.
+ * @param {string} text - Raw response text
+ * @returns {Object}
+ */
+function parseGvizResponse(text) {
+  // The gviz endpoint wraps the JSON in:
+  //   /*O_o*/
+  //   google.visualization.Query.setResponse({...});
+  const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
+  if (match) return JSON.parse(match[1]);
+  return JSON.parse(text); // Fall back to plain JSON
+}
+
 function setupCharactersTab() {
   // ── Sheet link import ────────────────────────────────────
   document.getElementById('btn-import-sheet-link')?.addEventListener('click', async () => {
@@ -959,21 +1011,56 @@ function setupCharactersTab() {
 
     showImportStatus(statusEl, '⏳ Importing from sheet…', 'loading');
 
-    const endpoints = [url, ...SHEET_CORS_PROXIES.map(fn => fn(url))];
+    const { id: sheetId, gid } = extractGoogleSheetParams(url);
     let charData = null;
 
-    for (let i = 0; i < endpoints.length; i++) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        const response = await fetch(endpoints[i], { signal: controller.signal, mode: 'cors' });
-        clearTimeout(timeout);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const text = await response.text();
-        charData = parseGSheetJSON(text);
-        break;
-      } catch {
-        // Try next endpoint
+    if (sheetId) {
+      // ── Google Sheets URL detected — use the Visualization API ──────────────
+      // The gviz/tq endpoint returns structured JSON (wrapped in JSONP) without
+      // requiring an API key, as long as the sheet is shared publicly.
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json${gid ? `&gid=${gid}` : ''}`;
+      const endpoints = [gvizUrl, ...SHEET_CORS_PROXIES.map(fn => fn(gvizUrl))];
+
+      for (let i = 0; i < endpoints.length; i++) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+          const response = await fetch(endpoints[i], { signal: controller.signal, mode: 'cors' });
+          clearTimeout(timeout);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          const gvizData = parseGvizResponse(text);
+          const kv = parseGSheetVisualizationData(gvizData);
+          charData = parseGSheetJSON(kv);
+          break;
+        } catch {
+          // Try next endpoint
+        }
+      }
+
+      if (!charData) {
+        showImportStatus(statusEl,
+          '⚠️ Could not read the Google Sheet. Make sure the sheet is shared as "Anyone with the link can view" and try again.',
+          'error');
+        return;
+      }
+    } else {
+      // ── Non-Google-Sheets URL — try fetching as a JSON endpoint ──────────────
+      const endpoints = [url, ...SHEET_CORS_PROXIES.map(fn => fn(url))];
+
+      for (let i = 0; i < endpoints.length; i++) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+          const response = await fetch(endpoints[i], { signal: controller.signal, mode: 'cors' });
+          clearTimeout(timeout);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          charData = parseGSheetJSON(text);
+          break;
+        } catch {
+          // Try next endpoint
+        }
       }
     }
 

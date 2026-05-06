@@ -1,9 +1,45 @@
 /**
  * Character Import Module
- * Supports D&D Beyond JSON export and G-sheet (Google Sheets) JSON export.
+ * Supports D&D Beyond JSON export and G-sheet (Google Sheets) JSON export,
+ * including direct import via the Google Visualization API (gviz/tq endpoint).
  */
 
 import { generateId, getModifier } from './utils.js';
+
+// ── Internal helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Case-insensitive, whitespace/punctuation-normalised field lookup.
+ * Tries each candidate key in order; returns the first non-empty value found.
+ * @param {Object} data
+ * @param {...string} keys
+ * @returns {*}
+ */
+function findField(data, ...keys) {
+  for (const key of keys) {
+    if (data[key] !== undefined && data[key] !== null && data[key] !== '') return data[key];
+    const norm = key.toLowerCase().replace(/[\s_\-]/g, '');
+    for (const k of Object.keys(data)) {
+      if (k.toLowerCase().replace(/[\s_\-]/g, '') === norm &&
+          data[k] !== undefined && data[k] !== null && data[k] !== '') {
+        return data[k];
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Convert a raw field value into a trimmed string array.
+ * Accepts an existing array, a comma/semicolon-separated string, or null.
+ * @param {*} val
+ * @returns {string[]}
+ */
+function parseList(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(s => String(s).trim()).filter(Boolean);
+  return String(val).split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+}
 
 /**
  * Proficiency bonus by character level (5e table).
@@ -237,6 +273,60 @@ export function parseGSheetJSON(raw) {
     });
   }
 
+  // ── Extended monster-statblock stats ────────────────────────────────────────
+
+  // Speed
+  const rawSpeed = findField(data, 'speed', 'Speed', 'walkSpeed', 'walk_speed',
+    'movementSpeed', 'movement_speed', 'move', 'Move');
+  const speed = rawSpeed != null
+    ? (typeof rawSpeed === 'number' ? `${rawSpeed} ft.` : String(rawSpeed))
+    : '30 ft.';
+
+  // Damage resistances / immunities / vulnerabilities
+  const damageResistances = parseList(
+    findField(data, 'damageResistances', 'damage_resistances', 'resistances',
+      'Resistances', 'resist', 'Resist', 'DamageResistances'));
+  const damageImmunities = parseList(
+    findField(data, 'damageImmunities', 'damage_immunities', 'immunities',
+      'Immunities', 'immune', 'Immune', 'DamageImmunities'));
+  const damageVulnerabilities = parseList(
+    findField(data, 'damageVulnerabilities', 'damage_vulnerabilities', 'vulnerabilities',
+      'Vulnerabilities', 'vulnerable', 'Vulnerable', 'DamageVulnerabilities'));
+
+  // Condition immunities
+  const conditionImmunities = parseList(
+    findField(data, 'conditionImmunities', 'condition_immunities', 'conditionImmune',
+      'condition_immune', 'ConditionImmunities', 'conditionimmunities'));
+
+  // Senses & languages
+  const senses = String(findField(data, 'senses', 'Senses', 'vision', 'Vision') || '');
+  const languages = String(findField(data, 'languages', 'Languages') || '');
+
+  // Challenge Rating
+  const rawCr = findField(data, 'cr', 'CR', 'challengeRating', 'challenge_rating',
+    'ChallengeRating', 'challenge', 'Challenge');
+  const cr = rawCr != null ? String(rawCr) : null;
+
+  // Alignment, size, creature type
+  const alignment = String(findField(data, 'alignment', 'Alignment') || '');
+  const size = String(findField(data, 'size', 'Size', 'creatureSize', 'creature_size') || '');
+  const creatureType = String(
+    findField(data, 'type', 'Type', 'creatureType', 'creature_type', 'race', 'Race') || '');
+
+  // Traits / Special abilities (stored as [{name, text}] or a plain string)
+  const rawTraits = findField(data, 'traits', 'Traits', 'specialAbilities', 'special_abilities',
+    'specialTraits', 'features', 'Features', 'abilities', 'Abilities');
+  let traits = [];
+  if (rawTraits) {
+    if (Array.isArray(rawTraits)) {
+      traits = rawTraits.map(t => (typeof t === 'object' && t !== null)
+        ? { name: t.name || 'Trait', text: t.text || t.description || '' }
+        : { name: 'Trait', text: String(t) });
+    } else {
+      traits = [{ name: 'Special Abilities', text: String(rawTraits) }];
+    }
+  }
+
   return {
     id: generateId(),
     name,
@@ -249,8 +339,95 @@ export function parseGSheetJSON(raw) {
     proficiencyBonus: profBonus,
     saveProficiencies,
     attacks,
+    speed,
+    damageResistances,
+    damageImmunities,
+    damageVulnerabilities,
+    conditionImmunities,
+    senses,
+    languages,
+    cr,
+    alignment,
+    size,
+    type: creatureType,
+    traits,
     source: 'gsheet',
   };
+}
+
+/**
+ * Convert a Google Visualization API (gviz/tq) table response into a flat
+ * key-value map that parseGSheetJSON can consume.
+ *
+ * Two common Google Sheets character-sheet layouts are supported:
+ *
+ *   1. Key-Value rows — each row has the field name in its first non-empty
+ *      string cell and the value in the immediately following cell:
+ *        ["Character Name", "Aela"]
+ *        ["Max HP",          32   ]
+ *
+ *   2. Header row + data row — the first row contains field names; the second
+ *      row contains the corresponding values:
+ *        header: ["Name", "HP", "AC", "STR", …]
+ *        data  : ["Aela",  32,   15,    16,  …]
+ *
+ * Both strategies run and their results are merged (key-value pairs take
+ * priority so they override header-row matches for the same key).
+ *
+ * @param {Object} gvizData - Parsed JSON from the gviz/tq endpoint (the
+ *   JSONP wrapper must be stripped before calling this function).
+ * @returns {Object} Flat key-value map suitable for parseGSheetJSON.
+ */
+export function parseGSheetVisualizationData(gvizData) {
+  const table = gvizData && gvizData.table;
+  if (!table || !Array.isArray(table.rows) || table.rows.length === 0) return {};
+
+  // Extract the primitive value from a gviz cell object.
+  // Numbers are kept as-is; strings are trimmed; null/undefined → null.
+  const cellVal = (cell) => {
+    if (!cell || cell.v == null) return null;
+    if (typeof cell.v === 'number') return cell.v;
+    const s = String(cell.v).trim();
+    return s || null;
+  };
+
+  const kv = {};
+
+  // Strategy 2 first (lower priority): header row + data row
+  if (table.rows.length >= 2) {
+    const hRow = table.rows[0];
+    const dRow = table.rows[1];
+    if (hRow?.c && dRow?.c) {
+      for (let i = 0; i < hRow.c.length; i++) {
+        const header = cellVal(hRow.c[i]);
+        if (typeof header !== 'string' || !header) continue;
+        const val = cellVal(dRow.c[i]);
+        kv[header] = val !== null ? val : '';
+      }
+    }
+  }
+
+  // Strategy 1 (higher priority): key-value pairs in each row
+  table.rows.forEach(row => {
+    if (!row?.c) return;
+    const cells = row.c;
+    // Find the first cell that contains a non-empty string — that is the key
+    let keyIdx = -1;
+    for (let i = 0; i < cells.length; i++) {
+      const v = cellVal(cells[i]);
+      if (v !== null && typeof v === 'string') { keyIdx = i; break; }
+    }
+    if (keyIdx === -1 || keyIdx + 1 >= cells.length) return;
+    const key = String(cellVal(cells[keyIdx])).trim();
+    if (!key) return;
+    const val = cellVal(cells[keyIdx + 1]);
+    // Only store if a value cell actually exists next to the key
+    if (val != null) {
+      kv[key] = val;
+    }
+  });
+
+  return kv;
 }
 
 /**

@@ -362,17 +362,24 @@ export function parseCharacterStatblock(char) {
     { key: 'cha', label: 'CHA', mod: chaMod },
   ];
 
+  // Build the creature type/size line shown at the top of the statblock
+  const typeLineParts = [char.size, char.type].filter(Boolean);
+  const typeLineExtra = typeLineParts.length ? ` — ${typeLineParts.join(' ')}` : '';
+
   let html = `
     <div class="statblock">
       <div class="sb-creature-info">
-        <p class="sb-type">${char.class || 'Adventurer'}${char.level ? ', Level ' + char.level : ''}</p>
+        <p class="sb-type">${char.class || 'Adventurer'}${char.level ? ', Level ' + char.level : ''}${typeLineExtra}</p>
+        ${char.alignment ? `<p class="sb-alignment">${char.alignment}</p>` : ''}
         ${char.source ? `<p class="sb-source">Imported from: ${char.source}</p>` : ''}
       </div>
       <div class="sb-divider"></div>
       <div class="sb-core">
         <p><strong>Armor Class</strong> ${char.ac || 10}</p>
         <p><strong>Hit Points</strong> ${char.maxHp || 20}</p>
+        <p><strong>Speed</strong> ${char.speed || '30 ft.'}</p>
         ${char.proficiencyBonus ? `<p><strong>Proficiency Bonus</strong> +${char.proficiencyBonus}</p>` : ''}
+        ${char.cr != null ? `<p><strong>Challenge Rating</strong> ${char.cr}</p>` : ''}
       </div>
       <div class="sb-divider"></div>
       <div class="sb-ability-scores">`;
@@ -434,7 +441,51 @@ export function parseCharacterStatblock(char) {
         <div class="sb-save-result sb-skill-result"></div>
       </div>`;
 
-  // Attacks section
+  // ── Resistances / Immunities / Vulnerabilities ────────────────────────────
+  const hasResist = char.damageVulnerabilities?.length ||
+    char.damageResistances?.length ||
+    char.damageImmunities?.length ||
+    char.conditionImmunities?.length;
+
+  if (hasResist) {
+    html += `<div class="sb-divider"></div>
+      <div class="sb-core">`;
+    if (char.damageVulnerabilities?.length) {
+      html += `<p><strong>Damage Vulnerabilities</strong> ${char.damageVulnerabilities.join(', ')}</p>`;
+    }
+    if (char.damageResistances?.length) {
+      html += `<p><strong>Damage Resistances</strong> ${char.damageResistances.join(', ')}</p>`;
+    }
+    if (char.damageImmunities?.length) {
+      html += `<p><strong>Damage Immunities</strong> ${char.damageImmunities.join(', ')}</p>`;
+    }
+    if (char.conditionImmunities?.length) {
+      html += `<p><strong>Condition Immunities</strong> ${char.conditionImmunities.join(', ')}</p>`;
+    }
+    html += `</div>`;
+  }
+
+  // ── Senses & Languages ────────────────────────────────────────────────────
+  const hasSensesOrLang = char.senses || char.languages;
+  if (hasSensesOrLang) {
+    html += `<div class="sb-divider"></div>
+      <div class="sb-core">`;
+    if (char.senses) html += `<p><strong>Senses</strong> ${char.senses}</p>`;
+    if (char.languages) html += `<p><strong>Languages</strong> ${char.languages}</p>`;
+    html += `</div>`;
+  }
+
+  // ── Traits / Special Abilities ────────────────────────────────────────────
+  if (Array.isArray(char.traits) && char.traits.length > 0) {
+    html += `<div class="sb-divider"></div>
+      <div class="sb-traits">`;
+    char.traits.forEach(trait => {
+      html += `<p><strong>${trait.name}.</strong> ${trait.text}</p>`;
+    });
+    html += `</div>`;
+  }
+
+  // ── Attacks ───────────────────────────────────────────────────────────────
   const attacks = getCharacterAttacks(char);
   if (attacks.length > 0) {
     html += `<div class="sb-divider"></div>
