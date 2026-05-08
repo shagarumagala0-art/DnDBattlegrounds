@@ -454,9 +454,9 @@ function setupTokenInfoPanel() {
 
         // Roll each damage part once and compute resist/immune-adjusted totals
         const targetToken = getSelectedTargetToken();
-        const m = targetToken?.monsterData;
-        const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
-        const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
+        const defenseData = targetToken?.monsterData || targetToken?.characterData;
+        const resistTypes = defenseData ? flattenDamageTypes(defenseData.resist, 'resist') : [];
+        const immuneTypes = defenseData ? flattenDamageTypes(defenseData.immune, 'immune') : [];
 
         // Saving throw check (AoE / DC abilities): roll before applying damage
         const saveInfo = rollSavingThrow(dmgBtn, targetToken);
@@ -649,18 +649,18 @@ export function updateTokenInfoPanel(token) {
   const wisMod = getModifier(token.wis || 10);
   const chaMod = getModifier(token.cha || 10);
 
-  // Skill checks: use monster proficiency bonus if available, else raw ability modifier
-  const monsterData = token.monsterData;
-  const perceptionParsed = monsterData ? parseInt(monsterData.skill?.perception, 10) : NaN;
+  // Skill checks: use explicit imported skill/save values when available
+  const combatData = token.monsterData || token.characterData || null;
+  const perceptionParsed = combatData ? parseInt(combatData.skill?.perception, 10) : NaN;
   const perceptionMod = !isNaN(perceptionParsed) ? perceptionParsed : wisMod;
-  const stealthParsed = monsterData ? parseInt(monsterData.skill?.stealth, 10) : NaN;
+  const stealthParsed = combatData ? parseInt(combatData.skill?.stealth, 10) : NaN;
   const stealthMod = !isNaN(stealthParsed) ? stealthParsed : dexMod;
   const { mod: spellcastingMod, ability: spellcastingAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
 
-  // Saving throw: use monster save proficiency if available, else raw ability modifier
+  // Saving throw: use explicit save values if available, else raw ability modifier
   const getSaveMod = (ability, fallback) => {
-    if (monsterData?.save?.[ability] !== undefined) {
-      const parsed = parseInt(monsterData.save[ability], 10);
+    if (combatData?.save?.[ability] !== undefined) {
+      const parsed = parseInt(combatData.save[ability], 10);
       if (!isNaN(parsed)) return parsed;
     }
     return fallback;
@@ -701,7 +701,11 @@ export function updateTokenInfoPanel(token) {
     if (token.monsterData) {
       attacks = parseMonsterAttacks(token.monsterData);
     } else if (token.characterData) {
-      attacks = getCharacterAttacks(token.characterData);
+      // If imported character data includes 5etools-style `action` entries,
+      // parse them with monster attack logic to retain AoE/DC metadata.
+      attacks = token.characterData.action?.length
+        ? parseMonsterAttacks(token.characterData)
+        : getCharacterAttacks(token.characterData);
     }
     if (attacks.length > 0) {
       attacks.forEach(atk => {
@@ -795,12 +799,12 @@ export function updateTokenInfoPanel(token) {
     }
   }
 
-  // Render spells section (monsters with spellcasting)
+  // Render spells section (combatants with spellcasting)
   const spellsSection = document.getElementById('token-spells-section');
   const spellListEl = document.getElementById('token-spell-list');
   if (spellsSection && spellListEl) {
     spellListEl.replaceChildren();
-    const spells = token.monsterData ? parseMonsterSpells(token.monsterData) : [];
+    const spells = combatData ? parseMonsterSpells(combatData) : [];
     const schoolNames = { A: 'Abjuration', C: 'Conjuration', D: 'Divination', E: 'Enchantment', I: 'Illusion', N: 'Necromancy', T: 'Transmutation', V: 'Evocation' };
     if (spells.length > 0) {
       spells.forEach(sp => {
@@ -870,27 +874,26 @@ export function updateTokenInfoPanel(token) {
     renderConditionChips(condGrid, token);
   }
 
-  // Render resistances/immunities (monsters only)
+  // Render resistances/immunities
   const resistSection = document.getElementById('token-resistances');
   const resistContent = document.getElementById('token-resistances-content');
   if (resistSection && resistContent) {
-    const m = token.monsterData;
-    if (m) {
+    if (combatData) {
       const lines = [];
-      if (m.vulnerable?.length) {
-        const vals = m.vulnerable.map(v => (typeof v === 'object' ? (v.vulnerable || []).join(', ') : v)).join('; ');
+      if (combatData.vulnerable?.length) {
+        const vals = combatData.vulnerable.map(v => (typeof v === 'object' ? (v.vulnerable || []).join(', ') : v)).join('; ');
         lines.push(`<span class="res-line res-vuln"><strong>VULN:</strong> ${vals}</span>`);
       }
-      if (m.resist?.length) {
-        const vals = m.resist.map(r => (typeof r === 'object' ? (r.resist || []).join(', ') : r)).join('; ');
+      if (combatData.resist?.length) {
+        const vals = combatData.resist.map(r => (typeof r === 'object' ? (r.resist || []).join(', ') : r)).join('; ');
         lines.push(`<span class="res-line res-resist"><strong>RESIST:</strong> ${vals}</span>`);
       }
-      if (m.immune?.length) {
-        const vals = m.immune.map(r => (typeof r === 'object' ? (r.immune || []).join(', ') : r)).join('; ');
+      if (combatData.immune?.length) {
+        const vals = combatData.immune.map(r => (typeof r === 'object' ? (r.immune || []).join(', ') : r)).join('; ');
         lines.push(`<span class="res-line res-immune"><strong>IMMUNE:</strong> ${vals}</span>`);
       }
-      if (m.conditionImmune?.length) {
-        lines.push(`<span class="res-line res-immune"><strong>COND IMMUNE:</strong> ${m.conditionImmune.join(', ')}</span>`);
+      if (combatData.conditionImmune?.length) {
+        lines.push(`<span class="res-line res-immune"><strong>COND IMMUNE:</strong> ${combatData.conditionImmune.join(', ')}</span>`);
       }
       if (lines.length > 0) {
         resistContent.innerHTML = lines.join('');
@@ -1180,9 +1183,9 @@ function setupCharacterSheetOverlay() {
         const damageTypesParts = (dmgBtn.dataset.damageTypes || '').split('|');
 
         const targetToken = getSelectedTargetToken();
-        const m = targetToken?.monsterData;
-        const resistTypes = m ? flattenDamageTypes(m.resist, 'resist') : [];
-        const immuneTypes = m ? flattenDamageTypes(m.immune, 'immune') : [];
+        const defenseData = targetToken?.monsterData || targetToken?.characterData;
+        const resistTypes = defenseData ? flattenDamageTypes(defenseData.resist, 'resist') : [];
+        const immuneTypes = defenseData ? flattenDamageTypes(defenseData.immune, 'immune') : [];
 
         // Saving throw check (AoE / DC abilities): roll before applying damage
         const saveInfo = rollSavingThrow(dmgBtn, targetToken);

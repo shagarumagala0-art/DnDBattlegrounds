@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { generateId, getAbbr, getModifier, formatModifier, getSpellcastingModifier, showToast } from './utils.js';
+import { generateId, getAbbr, getModifier, formatModifier, getSpellcastingModifier, showToast, parse5etools, formatSpeed } from './utils.js';
 import { getProficiencyBonus } from './import.js';
 
 /**
@@ -313,6 +313,15 @@ function formatMod(mod) {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Return an array of attacks for a player character in the same format
  * used by parseMonsterAttacks() so the token info panel can render them.
@@ -321,10 +330,24 @@ function formatMod(mod) {
  */
 export function getCharacterAttacks(charData) {
   if (!charData) return [];
+  const normalizeSaveAbility = (value) => {
+    const key = String(value || '').trim().toLowerCase();
+    const map = {
+      str: 'str', strength: 'str',
+      dex: 'dex', dexterity: 'dex',
+      con: 'con', constitution: 'con',
+      int: 'int', intelligence: 'int',
+      wis: 'wis', wisdom: 'wis',
+      cha: 'cha', charisma: 'cha',
+    };
+    return map[key] || null;
+  };
   return (charData.attacks || []).map(atk => ({
     name: atk.name || 'Attack',
     isAoe: !!(atk.isAoe),
     hitBonus: atk.isAoe ? null : (atk.hitBonus ?? 0),
+    saveDc: Number.isFinite(parseInt(atk.saveDc, 10)) ? parseInt(atk.saveDc, 10) : null,
+    saveAbility: normalizeSaveAbility(atk.saveAbility),
     damageDice: Array.isArray(atk.damageDice) ? atk.damageDice : [String(atk.damageDice || '1d4')],
     damageTypes: Array.isArray(atk.damageTypes) ? atk.damageTypes : [],
   }));
@@ -345,13 +368,21 @@ export function parseCharacterStatblock(char) {
 
   const prof = char.proficiencyBonus || getProficiencyBonus(char.level || 1);
   const saves = char.saveProficiencies || {};
+  const explicitSaves = char.save || {};
+  const explicitSkills = char.skill || {};
 
-  // Compute save bonus: raw mod + prof if proficient
-  const getSaveBonus = (key, rawMod) => rawMod + (saves[key] ? prof : 0);
+  // Compute save bonus: use explicit save values when provided, else raw mod + prof
+  const getSaveBonus = (key, rawMod) => {
+    const explicit = parseInt(explicitSaves[key], 10);
+    if (!isNaN(explicit)) return explicit;
+    return rawMod + (saves[key] ? prof : 0);
+  };
 
   const { mod: spellMod, ability: spellAbility } = getSpellcastingModifier(intMod, wisMod, chaMod);
-  const perceptionMod = wisMod; // simplified — no full skill list stored
-  const stealthMod = dexMod;
+  const perceptionParsed = parseInt(explicitSkills.perception, 10);
+  const stealthParsed = parseInt(explicitSkills.stealth, 10);
+  const perceptionMod = !isNaN(perceptionParsed) ? perceptionParsed : wisMod;
+  const stealthMod = !isNaN(stealthParsed) ? stealthParsed : dexMod;
 
   const SAVE_ABILITIES = [
     { key: 'str', label: 'STR', mod: strMod },
@@ -372,6 +403,7 @@ export function parseCharacterStatblock(char) {
       <div class="sb-core">
         <p><strong>Armor Class</strong> ${char.ac || 10}</p>
         <p><strong>Hit Points</strong> ${char.maxHp || 20}</p>
+        ${char.speed !== undefined && char.speed !== null ? `<p><strong>Speed</strong> ${formatSpeed(char.speed)}</p>` : ''}
         ${char.proficiencyBonus ? `<p><strong>Proficiency Bonus</strong> +${char.proficiencyBonus}</p>` : ''}
       </div>
       <div class="sb-divider"></div>
@@ -434,6 +466,59 @@ export function parseCharacterStatblock(char) {
         <div class="sb-save-result sb-skill-result"></div>
       </div>`;
 
+  if (char.skill && Object.keys(char.skill).length > 0) {
+    const skills = Object.entries(char.skill)
+      .map(([k, v]) => `${escapeHtml(String(k).charAt(0).toUpperCase() + String(k).slice(1))} ${formatModifier(parseInt(v, 10) || 0)}`)
+      .join(', ');
+    html += `<div class="sb-divider"></div><p><strong>Skills</strong> ${skills}</p>`;
+  }
+  if (char.vulnerable?.length) {
+    html += `<p><strong>Damage Vulnerabilities</strong> ${char.vulnerable.map(v => escapeHtml(v)).join('; ')}</p>`;
+  }
+  if (char.resist?.length) {
+    const resists = char.resist.map(r => {
+      if (typeof r === 'object') return escapeHtml((r.resist || []).join(', '));
+      return escapeHtml(r);
+    }).join('; ');
+    html += `<p><strong>Damage Resistances</strong> ${resists}</p>`;
+  }
+  if (char.immune?.length) {
+    const imm = char.immune.map(r => {
+      if (typeof r === 'object') return escapeHtml((r.immune || []).join(', '));
+      return escapeHtml(r);
+    }).join('; ');
+    html += `<p><strong>Damage Immunities</strong> ${imm}</p>`;
+  }
+  if (char.conditionImmune?.length) {
+    html += `<p><strong>Condition Immunities</strong> ${char.conditionImmune.map(v => escapeHtml(v)).join(', ')}</p>`;
+  }
+  if (char.senses?.length) {
+    html += `<p><strong>Senses</strong> ${char.senses.map(v => escapeHtml(v)).join(', ')}${char.passive ? `, passive Perception ${escapeHtml(char.passive)}` : ''}</p>`;
+  } else if (char.passive) {
+    html += `<p><strong>Senses</strong> passive Perception ${escapeHtml(char.passive)}</p>`;
+  }
+  if ((Array.isArray(char.languages) && char.languages.length > 0) || (!Array.isArray(char.languages) && char.languages)) {
+    const langs = Array.isArray(char.languages) ? char.languages.map(v => escapeHtml(v)).join(', ') : escapeHtml(char.languages);
+    html += `<p><strong>Languages</strong> ${langs}</p>`;
+  }
+
+  const renderEntrySection = (title, entries) => {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+    html += `<div class="sb-divider"></div><div class="sb-section"><h4 class="sb-section-title">${title}</h4>`;
+    entries.forEach(item => {
+      const name = item?.name || title;
+      const entryArr = Array.isArray(item?.entries) ? item.entries : [];
+      const body = entryArr.map(e => parse5etools(escapeHtml(String(e)))).join(' ');
+      html += `<p><strong>${escapeHtml(name)}.</strong> ${body}</p>`;
+    });
+    html += `</div>`;
+  };
+
+  renderEntrySection('Traits', char.trait);
+  renderEntrySection('Actions', char.action);
+  renderEntrySection('Reactions', char.reaction);
+  renderEntrySection('Legendary Actions', char.legendary);
+
   // Attacks section
   const attacks = getCharacterAttacks(char);
   if (attacks.length > 0) {
@@ -459,7 +544,7 @@ export function parseCharacterStatblock(char) {
               </button>`;
       }
 
-      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}" title="${atk.name}: ${damageSummary}">
+      html += `<button class="sb-atk-btn sb-dmg-roll-btn" data-damage="${atk.damageDice.join('|')}" data-damage-types="${(atk.damageTypes || []).join('|')}"${atk.saveDc !== null && atk.saveDc !== undefined ? ` data-save-dc="${atk.saveDc}"` : ''}${atk.saveAbility ? ` data-save-ability="${atk.saveAbility}"` : ''} title="${atk.name}: ${damageSummary}">
               <span class="sb-atk-label">DMG</span>
               <span class="sb-atk-val">${damageSummary}</span>
             </button>`;

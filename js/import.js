@@ -168,6 +168,102 @@ export function parseDnDBeyondJSON(raw) {
  * @returns {Object} Normalized character data
  */
 export function parseGSheetJSON(raw) {
+  const firstDefined = (obj, keys) => {
+    for (const key of keys) {
+      if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== '') return obj[key];
+    }
+    return undefined;
+  };
+  const toInt = (value, fallback) => {
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const toStringArray = (value) => {
+    if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+    if (typeof value === 'string') {
+      return value.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
+    }
+    return [];
+  };
+  const toEntriesArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.map(item => {
+        if (!item) return null;
+        if (typeof item === 'string') {
+          return { name: 'Feature', entries: [item] };
+        }
+        if (typeof item === 'object') {
+          const entries = Array.isArray(item.entries)
+            ? item.entries
+            : (item.entry ? [String(item.entry)] : []);
+          return {
+            name: item.name || item.title || 'Feature',
+            entries: entries.map(e => String(e)),
+          };
+        }
+        return null;
+      }).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return [{ name: 'Feature', entries: [value] }];
+    }
+    if (typeof value === 'object') {
+      return Object.entries(value).map(([name, entry]) => ({
+        name,
+        entries: Array.isArray(entry) ? entry.map(e => String(e)) : [String(entry)],
+      }));
+    }
+    return [];
+  };
+  const normalizeSaveAbility = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return null;
+    const map = {
+      str: 'str', strength: 'str',
+      dex: 'dex', dexterity: 'dex',
+      con: 'con', constitution: 'con',
+      int: 'int', intelligence: 'int',
+      wis: 'wis', wisdom: 'wis',
+      cha: 'cha', charisma: 'cha',
+    };
+    return map[raw] || null;
+  };
+  const toModifierMap = (value) => {
+    if (!value || typeof value !== 'object') return {};
+    const out = {};
+    const keys = ['str', 'dex', 'con', 'int', 'wis', 'cha', 'perception', 'stealth'];
+    keys.forEach(k => {
+      const raw = firstDefined(value, [k, k.toUpperCase(), k.charAt(0).toUpperCase() + k.slice(1)]);
+      if (raw !== undefined) {
+        const n = parseInt(raw, 10);
+        if (!isNaN(n)) out[k] = n;
+      }
+    });
+    return out;
+  };
+  const toSpeed = (value) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      const n = parseInt(trimmed, 10);
+      return /^-?\d+$/.test(trimmed) && Number.isFinite(n) ? n : trimmed;
+    }
+    if (typeof value === 'object') {
+      const speed = {};
+      ['walk', 'fly', 'swim', 'climb', 'burrow'].forEach(mode => {
+        const raw = firstDefined(value, [mode, mode.toUpperCase(), mode.charAt(0).toUpperCase() + mode.slice(1)]);
+        if (raw !== undefined) {
+          const n = parseInt(raw, 10);
+          if (!isNaN(n)) speed[mode] = n;
+        }
+      });
+      return Object.keys(speed).length ? speed : undefined;
+    }
+    return undefined;
+  };
+
   let data;
   try {
     data = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -227,15 +323,54 @@ export function parseGSheetJSON(raw) {
       const hitBonus = parseInt(String(rawBonus).replace(/^\+/, '')) || 0;
       const damage = atk.damage || atk.Damage || atk.damageDice || atk.DamageDice || '1d4';
       const isAoe = !!(atk.isAoe || atk.aoe || atk.IsAoe);
+      const saveDcRaw = atk.saveDc || atk.dc || atk.DC || atk.saveDC || atk.SaveDC;
+      const saveDc = saveDcRaw !== undefined ? (parseInt(saveDcRaw, 10) || null) : null;
+      const saveAbility = normalizeSaveAbility(atk.saveAbility || atk.dcAbility || atk.save || atk.saveStat);
+      const damageTypes = toStringArray(atk.damageTypes || atk.damageType || atk.DamageTypes || atk.DamageType);
 
       attacks.push({
         name: attackName,
         hitBonus,
         damageDice: [String(damage).trim()],
+        damageTypes,
         isAoe,
+        saveDc,
+        saveAbility,
       });
     });
   }
+
+  const speed = toSpeed(firstDefined(data, ['speed', 'Speed', 'movement', 'Movement', 'walkSpeed', 'WalkSpeed']));
+  const save = toModifierMap(firstDefined(data, ['save', 'saves', 'savingThrows', 'SavingThrows']) || {});
+  ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach((key) => {
+    const explicit = firstDefined(data, [`${key}Save`, `${key.toUpperCase()}Save`, `${key}_save`, `${key.toUpperCase()}_SAVE`]);
+    if (explicit !== undefined) {
+      const n = parseInt(explicit, 10);
+      if (!isNaN(n)) save[key] = n;
+    }
+  });
+  const skill = toModifierMap(firstDefined(data, ['skill', 'skills', 'Skills']) || {});
+  ['perception', 'stealth'].forEach((key) => {
+    const explicit = firstDefined(data, [key, key.toUpperCase(), key.charAt(0).toUpperCase() + key.slice(1)]);
+    if (explicit !== undefined) {
+      const n = parseInt(explicit, 10);
+      if (!isNaN(n)) skill[key] = n;
+    }
+  });
+  const vulnerable = toStringArray(firstDefined(data, ['vulnerable', 'Vulnerable', 'damageVulnerabilities', 'DamageVulnerabilities']));
+  const resist = toStringArray(firstDefined(data, ['resist', 'resistance', 'resistances', 'Resist', 'Resistances', 'damageResistances', 'DamageResistances']));
+  const immune = toStringArray(firstDefined(data, ['immune', 'immunity', 'immunities', 'Immune', 'Immunities', 'damageImmunities', 'DamageImmunities']));
+  const conditionImmune = toStringArray(firstDefined(data, ['conditionImmune', 'ConditionImmune', 'conditionImmunities', 'ConditionImmunities']));
+  const senses = toStringArray(firstDefined(data, ['senses', 'Senses']));
+  const passive = toInt(firstDefined(data, ['passive', 'passivePerception', 'Passive', 'PassivePerception']), undefined);
+  const languagesRaw = firstDefined(data, ['languages', 'Languages']);
+  const languages = toStringArray(languagesRaw);
+  const trait = toEntriesArray(firstDefined(data, ['trait', 'traits', 'Trait', 'Traits']));
+  const action = toEntriesArray(firstDefined(data, ['action', 'actions', 'Action', 'Actions']));
+  const reaction = toEntriesArray(firstDefined(data, ['reaction', 'reactions', 'Reaction', 'Reactions']));
+  const legendary = toEntriesArray(firstDefined(data, ['legendary', 'legendaryActions', 'Legendary', 'LegendaryActions']));
+  const spellcastingRaw = firstDefined(data, ['spellcasting', 'Spellcasting']);
+  const spellcasting = Array.isArray(spellcastingRaw) ? spellcastingRaw : (spellcastingRaw && typeof spellcastingRaw === 'object' ? [spellcastingRaw] : []);
 
   return {
     id: generateId(),
@@ -248,6 +383,21 @@ export function parseGSheetJSON(raw) {
     level,
     proficiencyBonus: profBonus,
     saveProficiencies,
+    speed,
+    save,
+    skill,
+    vulnerable,
+    resist,
+    immune,
+    conditionImmune,
+    senses,
+    passive,
+    languages,
+    trait,
+    action,
+    reaction,
+    legendary,
+    spellcasting,
     attacks,
     source: 'gsheet',
   };
