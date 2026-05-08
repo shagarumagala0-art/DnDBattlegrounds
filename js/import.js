@@ -246,8 +246,9 @@ export function parseGSheetJSON(raw) {
     if (value === undefined || value === null || value === '') return undefined;
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
-      const n = parseInt(value, 10);
-      return Number.isFinite(n) && value.trim() === String(n) ? n : value.trim();
+      const trimmed = value.trim();
+      const n = parseInt(trimmed, 10);
+      return /^-?\d+$/.test(trimmed) && Number.isFinite(n) ? n : trimmed;
     }
     if (typeof value === 'object') {
       const speed = {};
@@ -363,7 +364,7 @@ export function parseGSheetJSON(raw) {
   const senses = toStringArray(firstDefined(data, ['senses', 'Senses']));
   const passive = toInt(firstDefined(data, ['passive', 'passivePerception', 'Passive', 'PassivePerception']), undefined);
   const languagesRaw = firstDefined(data, ['languages', 'Languages']);
-  const languages = Array.isArray(languagesRaw) ? languagesRaw.map(v => String(v).trim()).filter(Boolean) : languagesRaw;
+  const languages = toStringArray(languagesRaw);
   const trait = toEntriesArray(firstDefined(data, ['trait', 'traits', 'Trait', 'Traits']));
   const action = toEntriesArray(firstDefined(data, ['action', 'actions', 'Action', 'Actions']));
   const reaction = toEntriesArray(firstDefined(data, ['reaction', 'reactions', 'Reaction', 'Reactions']));

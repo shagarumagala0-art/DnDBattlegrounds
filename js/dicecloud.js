@@ -313,6 +313,15 @@ function formatMod(mod) {
   return mod >= 0 ? `+${mod}` : `${mod}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Return an array of attacks for a player character in the same format
  * used by parseMonsterAttacks() so the token info panel can render them.
@@ -321,12 +330,24 @@ function formatMod(mod) {
  */
 export function getCharacterAttacks(charData) {
   if (!charData) return [];
+  const normalizeSaveAbility = (value) => {
+    const key = String(value || '').trim().toLowerCase();
+    const map = {
+      str: 'str', strength: 'str',
+      dex: 'dex', dexterity: 'dex',
+      con: 'con', constitution: 'con',
+      int: 'int', intelligence: 'int',
+      wis: 'wis', wisdom: 'wis',
+      cha: 'cha', charisma: 'cha',
+    };
+    return map[key] || null;
+  };
   return (charData.attacks || []).map(atk => ({
     name: atk.name || 'Attack',
     isAoe: !!(atk.isAoe),
     hitBonus: atk.isAoe ? null : (atk.hitBonus ?? 0),
-    saveDc: atk.saveDc ?? null,
-    saveAbility: atk.saveAbility || null,
+    saveDc: Number.isFinite(parseInt(atk.saveDc, 10)) ? parseInt(atk.saveDc, 10) : null,
+    saveAbility: normalizeSaveAbility(atk.saveAbility),
     damageDice: Array.isArray(atk.damageDice) ? atk.damageDice : [String(atk.damageDice || '1d4')],
     damageTypes: Array.isArray(atk.damageTypes) ? atk.damageTypes : [],
   }));
@@ -447,31 +468,37 @@ export function parseCharacterStatblock(char) {
 
   if (char.skill && Object.keys(char.skill).length > 0) {
     const skills = Object.entries(char.skill)
-      .map(([k, v]) => `${String(k).charAt(0).toUpperCase() + String(k).slice(1)} ${formatModifier(parseInt(v, 10) || 0)}`)
+      .map(([k, v]) => `${escapeHtml(String(k).charAt(0).toUpperCase() + String(k).slice(1))} ${formatModifier(parseInt(v, 10) || 0)}`)
       .join(', ');
     html += `<div class="sb-divider"></div><p><strong>Skills</strong> ${skills}</p>`;
   }
   if (char.vulnerable?.length) {
-    html += `<p><strong>Damage Vulnerabilities</strong> ${char.vulnerable.join('; ')}</p>`;
+    html += `<p><strong>Damage Vulnerabilities</strong> ${char.vulnerable.map(v => escapeHtml(v)).join('; ')}</p>`;
   }
   if (char.resist?.length) {
-    const resists = char.resist.map(r => typeof r === 'object' ? r.resist?.join(', ') || '' : r).join('; ');
+    const resists = char.resist.map(r => {
+      if (typeof r === 'object') return escapeHtml((r.resist || []).join(', '));
+      return escapeHtml(r);
+    }).join('; ');
     html += `<p><strong>Damage Resistances</strong> ${resists}</p>`;
   }
   if (char.immune?.length) {
-    const imm = char.immune.map(r => typeof r === 'object' ? r.immune?.join(', ') || '' : r).join('; ');
+    const imm = char.immune.map(r => {
+      if (typeof r === 'object') return escapeHtml((r.immune || []).join(', '));
+      return escapeHtml(r);
+    }).join('; ');
     html += `<p><strong>Damage Immunities</strong> ${imm}</p>`;
   }
   if (char.conditionImmune?.length) {
-    html += `<p><strong>Condition Immunities</strong> ${char.conditionImmune.join(', ')}</p>`;
+    html += `<p><strong>Condition Immunities</strong> ${char.conditionImmune.map(v => escapeHtml(v)).join(', ')}</p>`;
   }
   if (char.senses?.length) {
-    html += `<p><strong>Senses</strong> ${char.senses.join(', ')}${char.passive ? `, passive Perception ${char.passive}` : ''}</p>`;
+    html += `<p><strong>Senses</strong> ${char.senses.map(v => escapeHtml(v)).join(', ')}${char.passive ? `, passive Perception ${escapeHtml(char.passive)}` : ''}</p>`;
   } else if (char.passive) {
-    html += `<p><strong>Senses</strong> passive Perception ${char.passive}</p>`;
+    html += `<p><strong>Senses</strong> passive Perception ${escapeHtml(char.passive)}</p>`;
   }
-  if (char.languages) {
-    const langs = Array.isArray(char.languages) ? char.languages.join(', ') : char.languages;
+  if ((Array.isArray(char.languages) && char.languages.length > 0) || (!Array.isArray(char.languages) && char.languages)) {
+    const langs = Array.isArray(char.languages) ? char.languages.map(v => escapeHtml(v)).join(', ') : escapeHtml(char.languages);
     html += `<p><strong>Languages</strong> ${langs}</p>`;
   }
 
@@ -481,8 +508,8 @@ export function parseCharacterStatblock(char) {
     entries.forEach(item => {
       const name = item?.name || title;
       const entryArr = Array.isArray(item?.entries) ? item.entries : [];
-      const body = entryArr.map(e => parse5etools(String(e))).join(' ');
-      html += `<p><strong>${name}.</strong> ${body}</p>`;
+      const body = entryArr.map(e => parse5etools(escapeHtml(String(e)))).join(' ');
+      html += `<p><strong>${escapeHtml(name)}.</strong> ${body}</p>`;
     });
     html += `</div>`;
   };
