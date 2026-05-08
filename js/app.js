@@ -701,6 +701,8 @@ export function updateTokenInfoPanel(token) {
     if (token.monsterData) {
       attacks = parseMonsterAttacks(token.monsterData);
     } else if (token.characterData) {
+      // If imported character data includes 5etools-style `action` entries,
+      // parse them with monster attack logic to retain AoE/DC metadata.
       attacks = token.characterData.action?.length
         ? parseMonsterAttacks(token.characterData)
         : getCharacterAttacks(token.characterData);
